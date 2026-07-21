@@ -1,0 +1,25 @@
+@theme {
+
+    --color-bg: #0D1F1B;
+
+    --color-surface: #17332C;
+
+    --color-panel: #1C3B34;
+
+    --color-card: #23483F;
+
+    --color-border: rgba(255,255,255,.08);
+
+    --color-text: #F6F2E9;
+
+    --color-text-muted: rgba(246,242,233,.6);
+
+    --color-gold: #D9A441;
+
+    --color-green: #4DB980;
+
+    --color-red: #D25A5A;
+
+    --color-orange: #E39B4D;
+
+}
