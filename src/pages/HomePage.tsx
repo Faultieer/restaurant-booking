@@ -1,32 +1,198 @@
 import { useState } from "react";
 
-import FloorPlan from "../components/FloorPlan.tsx";
-import TablePanel from "../components/TablePanel.tsx";
+import FloorPlan from "../components/FloorPlan";
+import TablePanel from "../components/TablePanel";
 
 
-export default function HomePage() {
+export type TableStatus =
+    | "free"
+    | "soon"
+    | "reserved";
 
 
-    const [selectedTable, setSelectedTable] = useState<Table | null>(null);
+export type Table = {
 
-    type Table = {
-        id:number;
-        seats:number;
-        status:"free" | "soon" | "reserved";
+    id:number;
+
+    seats:number;
+
+    status:TableStatus;
+
+};
+
+
+
+export type BookingStatus =
+    | "reserved"
+    | "seated"
+    | "completed"
+    | "cancelled";
+
+
+
+export type Booking = {
+
+    id:number;
+
+    tableId:number;
+
+    date:string;
+
+    startTime:string;
+
+    endTime:string;
+
+    guests:number;
+
+    status:BookingStatus;
+
+
+    guest:{
+
+        name:string;
+
+        phone:string;
+
+        tags:string[];
+
+        comment:string;
+
     };
+
+};
+
+
+
+
+
+export default function HomePage(){
+
+
+    const [selectedDate,setSelectedDate] =
+        useState(
+            "2026-07-21"
+        );
+
+
+    const [selectedTime,setSelectedTime] =
+        useState(
+            "19:30"
+        );
+
+
+
+    const [selectedTable,setSelectedTable] =
+        useState<Table | null>(null);
+
+
+
+    const [isBookingOpen,setIsBookingOpen] =
+        useState(false);
+
+
+
+    const [bookingTable,setBookingTable] =
+        useState<Table | null>(null);
+
+
+
+
+    const [bookings,setBookings] =
+        useState<Booking[]>([
+
+
+            {
+
+                id:1,
+
+                tableId:13,
+
+                date:"2026-07-21",
+
+                startTime:"14:30",
+
+                endTime:"17:15",
+
+                guests:4,
+
+                status:"reserved",
+
+
+                guest:{
+
+                    name:"Виталя",
+
+                    phone:"+79999999999",
+
+                    tags:[
+                        "Постоянный"
+                    ],
+
+                    comment:
+                        "Любит блек шип"
+
+                }
+
+            }
+
+
+
+        ]);
+
+
+
+
+
+    function openBooking(){
+
+
+        setBookingTable(
+            selectedTable
+        );
+
+
+        setIsBookingOpen(true);
+
+
+    }
+
+
+
+
+
+
+    function selectTable(table:Table){
+
+
+        setSelectedTable(table);
+
+
+    }
+
+
+
+
+
 
 
     return (
 
-        <div className="
-        h-screen
-        bg-[#10211D]
-        text-white
-        overflow-hidden
-        ">
+
+        <div
+
+            className="
+            h-screen
+            bg-[#10211D]
+            text-white
+            overflow-hidden
+            "
+
+        >
+
 
 
             <header
+
                 className="
                 h-20
                 border-b
@@ -35,48 +201,61 @@ export default function HomePage() {
                 flex
                 items-center
                 justify-between
+                relative
                 "
+
             >
 
 
-                <div className="
-                flex
-                items-center
-                gap-4
-                ">
 
+                <div
 
-                    <div className="
-                    w-12
-                    h-12
-                    rounded-2xl
-                    bg-[#D7A441]
+                    className="
                     flex
                     items-center
-                    justify-center
-                    text-black
-                    font-bold
-                    text-xl
-                    ">
+                    gap-4
+                    "
+
+                >
+
+
+                    <div
+
+                        className="
+                        w-12
+                        h-12
+                        rounded-2xl
+                        bg-[#D7A441]
+                        flex
+                        items-center
+                        justify-center
+                        text-black
+                        font-bold
+                        text-xl
+                        "
+
+                    >
+
                         G
+
                     </div>
+
 
 
                     <div>
 
-                        <h1 className="
-                        text-xl
-                        font-semibold
-                        ">
+
+                        <h1 className="text-xl font-semibold">
+
                             Гусь и Огурчик
+
                         </h1>
 
 
-                        <p className="
-                        text-sm
-                        text-white/50
-                        ">
+                        <p className="text-sm text-white/50">
+
                             Система бронирования
+
                         </p>
 
 
@@ -87,45 +266,44 @@ export default function HomePage() {
 
 
 
-                <div className="
-                flex
-                items-center
-                gap-6
-                ">
 
 
-                    <div className="text-right">
+                <div
 
-                        <div className="
-                        text-lg
-                        font-medium
-                        ">
-                            21 июля
-                        </div>
+                    className="
+                    absolute
+                    left-1/2
+                    -translate-x-1/2
+                    "
+
+                >
+
+                    <button
+
+                        className="
+                        bg-white/10
+                        px-6
+                        py-3
+                        rounded-xl
+                        "
+
+                    >
+
+                        Сегодня
+
+                        <span className="ml-3 text-white/50">
+
+                            {selectedTime}
+
+                        </span>
 
 
-                        <div className="
-                        text-sm
-                        text-white/50
-                        ">
-                            Вторник
-                        </div>
-
-
-                    </div>
-
-
-
-                    <div className="
-                    text-3xl
-                    font-semibold
-                    tracking-wider
-                    ">
-                        19:42
-                    </div>
+                    </button>
 
 
                 </div>
+
+
 
 
             </header>
@@ -134,27 +312,87 @@ export default function HomePage() {
 
 
 
+
             <main
+
                 className="
                 h-[calc(100vh-80px)]
                 grid
                 grid-cols-[1fr_360px]
                 "
+
             >
 
 
 
                 <section
+
                     className="
                     relative
                     overflow-hidden
                     "
+
                 >
 
+
                     <FloorPlan
-                        onSelectTable={setSelectedTable}
-                        selectedTableId={selectedTable?.id}
+
+
+                        bookings={bookings}
+
+
+                        selectedDate={selectedDate}
+
+
+                        selectedTime={selectedTime}
+
+
+                        onSelectTable={selectTable}
+
+
+                        selectedTableId={
+                            selectedTable?.id
+                        }
+
+
                     />
+
+
+
+                    <button
+
+                        onClick={openBooking}
+
+
+                        className="
+                        absolute
+                        right-8
+                        bottom-8
+
+                        bg-[#D7A441]
+
+                        text-black
+
+                        px-8
+                        py-4
+
+                        rounded-2xl
+
+                        font-semibold
+
+                        text-lg
+
+                        shadow-xl
+
+                        "
+
+                    >
+
+                        Создать бронь
+
+
+                    </button>
+
 
 
                 </section>
@@ -163,28 +401,42 @@ export default function HomePage() {
 
 
 
+
                 <aside
+
                     className="
                     border-l
                     border-white/10
-                    bg-black/10
                     "
+
                 >
 
 
-                    {
-                        selectedTable && (
 
-                            <TablePanel
+                    <TablePanel
 
-                                table={selectedTable}
 
-                                onClose={() => setSelectedTable(null)}
+                        table={selectedTable}
 
-                            />
 
-                        )
-                    }
+                        bookings={bookings}
+
+
+                        setBookings={setBookings}
+
+
+                        selectedDate={selectedDate}
+
+
+                        onClose={()=>
+
+                            setSelectedTable(null)
+
+                        }
+
+
+                    />
+
 
 
                 </aside>
@@ -194,8 +446,11 @@ export default function HomePage() {
             </main>
 
 
+
+
         </div>
 
-    )
+
+    );
 
 }
