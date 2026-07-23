@@ -1,569 +1,266 @@
-import type {
-    Dispatch,
-    SetStateAction
-} from "react";
+import { useState } from "react";
 
-
-import type {
-    Booking,
-    Table
-} from "../pages/HomePage";
-
-
+import type { Booking, Table } from "../pages/HomePage";
 
 type TablePanelProps = {
-
-
-    table:Table | null;
-
-
-    bookings:Booking[];
-
-
-    setBookings:
-        Dispatch<SetStateAction<Booking[]>>;
-
-
-    selectedDate:string;
-
-
-    onClose:()=>void;
-
-
+    table: Table | null;
+    bookings: Booking[];
+    selectedDate: string;
+    onClose: () => void;
+    onEditBooking: (booking: Booking) => void;
+    onBlockTable: (tableId: number, reason: string) => void;
+    onUnblockTable: (tableId: number) => void;
 };
 
+type ScheduleItem =
+    | {
+          status: "free";
+          startTime: string;
+          endTime: string;
+      }
+    | {
+          status: "booking";
+          startTime: string;
+          endTime: string;
+          booking: Booking;
+      };
 
+const dayStart = "13:00";
+const dayEnd = "24:00";
+const blockReasons = ["уборка", "ремонт", "резерв администрации", "другая причина"];
 
+function timeToMinutes(time: string) {
+    if (time === "24:00") return 1440;
 
-
-type ScheduleItem = {
-
-
-    startTime:string;
-
-
-    endTime:string;
-
-
-    status:
-        | "free"
-        | "booking";
-
-
-    booking?:Booking;
-
-
-};
-
-
-
-
-
-
-function timeToMinutes(time:string){
-
-
-    const [
-        hours,
-        minutes
-    ] = time.split(":").map(Number);
-
-
+    const [hours, minutes] = time.split(":").map(Number);
     return hours * 60 + minutes;
-
 }
 
+function minutesToTime(minutes: number) {
+    if (minutes === 1440) return "24:00";
 
-
-
-
-function minutesToTime(minutes:number){
-
-
-    const hours =
-        Math.floor(minutes / 60);
-
-
-    const mins =
-        minutes % 60;
-
-
-
-    return (
-
-        `${hours.toString().padStart(2,"0")}:${
-            mins.toString().padStart(2,"0")
-        }`
-
-    );
-
+    const hours = Math.floor(minutes / 60);
+    const mins = minutes % 60;
+    return `${String(hours).padStart(2, "0")}:${String(mins).padStart(2, "0")}`;
 }
 
+function getStatusLabel(status: Booking["status"]) {
+    const labels = {
+        reserved: "Забронировано",
+        seated: "Забронировано",
+        completed: "Завершено",
+        cancelled: "Отменено",
+    };
 
+    return labels[status];
+}
 
+function generateSchedule(tableId: number, bookings: Booking[], date: string): ScheduleItem[] {
+    const tableBookings = bookings
+        .filter((booking) => booking.tableId === tableId && booking.date === date)
+        .sort((a, b) => timeToMinutes(a.startTime) - timeToMinutes(b.startTime));
 
+    const result: ScheduleItem[] = [];
+    let current = timeToMinutes(dayStart);
+    const end = timeToMinutes(dayEnd);
 
+    tableBookings.forEach((booking) => {
+        const bookingStart = timeToMinutes(booking.startTime);
+        const bookingEnd = timeToMinutes(booking.endTime);
 
-
-function generateSchedule(
-
-    tableId:number,
-
-    bookings:Booking[],
-
-    date:string
-
-
-):ScheduleItem[]{
-
-
-
-    const dayStart =
-        timeToMinutes("10:30");
-
-
-    const dayEnd =
-        timeToMinutes("23:00");
-
-
-
-    const tableBookings =
-
-        bookings
-
-            .filter(
-
-                booking =>
-
-                    booking.tableId === tableId &&
-
-                    booking.date === date
-
-            )
-
-            .sort(
-
-                (a,b)=>
-
-                    timeToMinutes(a.startTime)
-
-                    -
-
-                    timeToMinutes(b.startTime)
-
-            );
-
-
-
-
-
-    const result:ScheduleItem[] = [];
-
-
-
-    let current = dayStart;
-
-
-
-
-
-    tableBookings.forEach(booking=>{
-
-
-        const bookingStart =
-            timeToMinutes(
-                booking.startTime
-            );
-
-
-        const bookingEnd =
-            timeToMinutes(
-                booking.endTime
-            );
-
-
-
-
-        if(current < bookingStart){
-
-
+        if (current < bookingStart) {
             result.push({
-
-                startTime:
-                    minutesToTime(current),
-
-
-                endTime:
-                    minutesToTime(bookingStart),
-
-
-                status:"free"
-
-
+                status: "free",
+                startTime: minutesToTime(current),
+                endTime: booking.startTime,
             });
-
-
         }
 
-
-
-
-
         result.push({
-
-
-            startTime:
-            booking.startTime,
-
-
-            endTime:
-            booking.endTime,
-
-
-            status:"booking",
-
-
-            booking
-
-
+            status: "booking",
+            startTime: booking.startTime,
+            endTime: booking.endTime,
+            booking,
         });
 
-
-
-        current = bookingEnd;
-
-
+        current = Math.max(current, bookingEnd);
     });
 
-
-
-
-
-    if(current < dayEnd){
-
-
+    if (current < end) {
         result.push({
-
-            startTime:
-                minutesToTime(current),
-
-
-            endTime:
-                minutesToTime(dayEnd),
-
-
-            status:"free"
-
-
+            status: "free",
+            startTime: minutesToTime(current),
+            endTime: dayEnd,
         });
-
-
     }
-
-
-
 
     return result;
-
-
 }
 
-
-
-
-
-
-
 export default function TablePanel({
+    table,
+    bookings,
+    selectedDate,
+    onClose,
+    onEditBooking,
+    onBlockTable,
+    onUnblockTable,
+}: TablePanelProps) {
+    const [blockReason, setBlockReason] = useState(blockReasons[0]);
+    const [customReason, setCustomReason] = useState("");
+    const [isBlockOpen, setIsBlockOpen] = useState(false);
 
-
-                                       table,
-
-                                       bookings,
-
-                                       selectedDate,
-
-                                       onClose
-
-
-                                   }:TablePanelProps){
-
-
-
-
-
-    if(!table){
-
-        return null;
-
+    if (!table) {
+        return (
+            <aside className="h-full border-l border-white/10 bg-[#10211D] p-6 text-white">
+                <div className="rounded-2xl border border-white/10 bg-white/5 p-5">
+                    <h2 className="text-lg font-semibold">Стол не выбран</h2>
+                    <p className="mt-2 text-sm text-white/50">
+                        Нажмите на стол, чтобы посмотреть бронирования за выбранную дату.
+                    </p>
+                </div>
+            </aside>
+        );
     }
 
-
-
-
-
-    const schedule =
-
-        generateSchedule(
-
-            table.id,
-
-            bookings,
-
-            selectedDate
-
-        );
-
-
-
-
+    const schedule = generateSchedule(table.id, bookings, selectedDate);
+    const reason = blockReason === "другая причина" ? customReason.trim() : blockReason;
 
     return (
-
-
-        <aside
-
-            className="
-            h-full
-            bg-[#10211D]
-            border-l
-            border-white/10
-            p-6
-            text-white
-            "
-
-        >
-
-
-
-            <div
-
-                className="
-                flex
-                justify-between
-                "
-
-            >
-
-
-
+        <aside className="h-full overflow-y-auto border-l border-white/10 bg-[#10211D] p-6 text-white">
+            <div className="flex justify-between gap-4">
                 <div>
-
-
-                    <h2
-
-                        className="
-                        text-2xl
-                        font-bold
-                        "
-
-                    >
-
-                        Стол №{table.id}
-
-
-                    </h2>
-
-
-
-                    <p className="mt-2 text-white/50">
-
-                        👥 {table.seats} мест
-
-                    </p>
-
-
+                    <h2 className="text-2xl font-bold">Стол №{table.id}</h2>
+                    <p className="mt-2 text-white/50">{table.seats} мест</p>
+                    {table.status === "blocked" && (
+                        <p className="mt-2 rounded-xl bg-white/10 px-3 py-2 text-sm text-white/75">
+                            Недоступно: {table.blockReason ?? "без причины"}
+                        </p>
+                    )}
                 </div>
 
+                <div className="flex gap-2">
+                    <button
+                        type="button"
+                        onClick={() => setIsBlockOpen((current) => !current)}
+                        className={`
+                            flex h-12 w-12 items-center justify-center rounded-xl text-xl transition
+                            ${table.status === "blocked"
+                                ? "bg-[#D25A5A] text-white"
+                                : "bg-white/10 text-white hover:bg-white/15"}
+                        `}
+                        aria-label="Блокировка стола"
+                        title="Блокировка стола"
+                    >
+                        🔒
+                    </button>
 
-
-
-                <button
-
-                    onClick={onClose}
-
-                    className="
-                    bg-white/10
-                    rounded-xl
-                    px-3
-                    "
-
-                >
-
-                    ×
-
-
-                </button>
-
-
+                    <button
+                        type="button"
+                        onClick={onClose}
+                        className="flex h-12 w-12 items-center justify-center rounded-xl bg-white/10 text-xl transition hover:bg-white/15"
+                        aria-label="Закрыть карточку стола"
+                    >
+                        ×
+                    </button>
+                </div>
             </div>
 
+            <div className="mt-4 text-white/50">{selectedDate}</div>
 
+            <div className="my-5 h-px bg-white/10" />
 
+            {isBlockOpen && (
+                <div className="mb-5 rounded-2xl border border-white/10 bg-white/5 p-4">
+                    <h3 className="font-semibold">Блокировка стола</h3>
 
-
-            <div
-
-                className="
-                mt-4
-                text-white/50
-                "
-
-            >
-
-                {selectedDate}
-
-
-            </div>
-
-
-
-
-
-
-
-            <div className="mt-6 space-y-3">
-
-
-
-                {
-                    schedule.map(
-
-                        (item,index)=>(
-
-
-                            <div
-
-                                key={index}
-
-                                className={`
-                                
-                                rounded-xl
-                                p-4
-
-                                ${
-                                    item.status === "booking"
-
-                                        ?
-
-                                        "bg-[#D25A5A]/20 border border-[#D25A5A]/40"
-
-                                        :
-
-                                        "bg-white/5"
-
-                                }
-
-                                `}
-
+                    {table.status === "blocked" ? (
+                        <button
+                            type="button"
+                            onClick={() => {
+                                onUnblockTable(table.id);
+                                setIsBlockOpen(false);
+                            }}
+                            className="mt-4 h-12 w-full rounded-xl bg-white/10 px-4 font-semibold transition hover:bg-white/15"
+                        >
+                            Снять блокировку
+                        </button>
+                    ) : (
+                        <>
+                            <select
+                                value={blockReason}
+                                onChange={(event) => setBlockReason(event.target.value)}
+                                className="mt-4 h-12 w-full rounded-xl border border-white/10 bg-white/10 px-3 text-white"
                             >
+                                {blockReasons.map((item) => (
+                                    <option key={item} value={item}>
+                                        {item}
+                                    </option>
+                                ))}
+                            </select>
 
+                            {blockReason === "другая причина" && (
+                                <input
+                                    type="text"
+                                    value={customReason}
+                                    onChange={(event) => setCustomReason(event.target.value)}
+                                    placeholder="Причина"
+                                    className="mt-3 h-12 w-full rounded-xl border border-white/10 bg-white/10 px-3 text-white placeholder:text-white/30"
+                                />
+                            )}
 
+                            <button
+                                type="button"
+                                disabled={!reason}
+                                onClick={() => {
+                                    onBlockTable(table.id, reason);
+                                    setIsBlockOpen(false);
+                                }}
+                                className="
+                                    mt-4 h-12 w-full rounded-xl bg-[#D25A5A] px-4
+                                    font-semibold text-white transition hover:bg-[#df6b6b]
+                                    disabled:cursor-not-allowed disabled:opacity-45
+                                "
+                            >
+                                Заблокировать
+                            </button>
+                        </>
+                    )}
+                </div>
+            )}
 
-                                <div
-
-                                    className="
-                                    font-semibold
-                                    "
-
-                                >
-
-                                    {item.startTime}
-
-                                    {" - "}
-
-                                    {item.endTime}
-
-
-                                </div>
-
-
-
-
-                                {
-                                    item.status === "free"
-
-                                        ?
-
-                                        <p className="mt-2 text-[#4DB980]">
-
-                                            Свободен
-
-
-                                        </p>
-
-
-                                        :
-
-                                        <div className="mt-2">
-
-
-                                            <p>
-
-                                                👤 {item.booking?.guest.name}
-
-                                            </p>
-
-
-
-                                            <p>
-
-                                                👥 {item.booking?.guests} гостей
-
-                                            </p>
-
-
-
-                                        </div>
-
-
-                                }
-
-
+            <div className="space-y-3">
+                {schedule.map((item, index) =>
+                    item.status === "free" ? (
+                        <div key={`${item.startTime}-${index}`} className="rounded-xl bg-white/5 p-4">
+                            <div className="font-semibold">
+                                {item.startTime}–{item.endTime}
                             </div>
-
-
-                        )
-
-
+                            <p className="mt-2 font-semibold text-[#4DB980]">Свободно</p>
+                        </div>
+                    ) : (
+                        <button
+                            key={item.booking.id}
+                            type="button"
+                            onClick={() => onEditBooking(item.booking)}
+                            className="
+                                w-full rounded-xl border border-[#D25A5A]/40 bg-[#D25A5A]/20
+                                p-4 text-left transition hover:bg-[#D25A5A]/30
+                            "
+                        >
+                            <div className="font-semibold">
+                                {item.startTime}–{item.endTime}
+                            </div>
+                            <p className="mt-2">{item.booking.guest.name}</p>
+                            <p className="text-sm text-white/60">{item.booking.guests} гостя</p>
+                            <p className="mt-2 text-xs uppercase tracking-wide text-white/50">
+                                {getStatusLabel(item.booking.status)}
+                            </p>
+                        </button>
                     )
-
-                }
-
-
-
+                )}
             </div>
-
-
-
-
-
-            <button
-
-                className="
-                mt-6
-                w-full
-                bg-[#D7A441]
-                text-black
-                py-3
-                rounded-xl
-                font-semibold
-                "
-
-            >
-
-                Создать бронь
-
-
-            </button>
-
-
-
-
 
         </aside>
-
-
     );
-
 }

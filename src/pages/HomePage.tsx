@@ -1,26 +1,22 @@
-import { useState } from "react";
+import { useCallback, useMemo, useState } from "react";
 
-import FloorPlan from "../components/FloorPlan";
+import BookingModal from "../components/BookingModal";
+import DateTimePopover from "../components/DateTimePopover";
+import FloorPlan, { initialFloorTables } from "../components/FloorPlan";
 import TablePanel from "../components/TablePanel";
-
 
 export type TableStatus =
     | "free"
     | "soon"
-    | "reserved";
-
+    | "reserved"
+    | "blocked";
 
 export type Table = {
-
-    id:number;
-
-    seats:number;
-
-    status:TableStatus;
-
+    id: number;
+    seats: number;
+    status: TableStatus;
+    blockReason?: string;
 };
-
-
 
 export type BookingStatus =
     | "reserved"
@@ -28,429 +24,319 @@ export type BookingStatus =
     | "completed"
     | "cancelled";
 
-
-
-export type Booking = {
-
-    id:number;
-
-    tableId:number;
-
-    date:string;
-
-    startTime:string;
-
-    endTime:string;
-
-    guests:number;
-
-    status:BookingStatus;
-
-
-    guest:{
-
-        name:string;
-
-        phone:string;
-
-        tags:string[];
-
-        comment:string;
-
-    };
-
+export type Guest = {
+    id: number;
+    name: string;
+    phone: string;
+    tags: string[];
+    comment: string;
 };
 
+export type Booking = {
+    id: number;
+    tableId: number;
+    date: string;
+    startTime: string;
+    endTime: string;
+    guests: number;
+    status: BookingStatus;
+    guest: {
+        name: string;
+        phone: string;
+        tags: string[];
+        comment: string;
+    };
+};
 
+type BookingDraft = {
+    date: string;
+    time: string;
+    durationMinutes: number;
+    guests: number;
+};
 
+function todayString() {
+    const today = new Date();
+    const year = today.getFullYear();
+    const month = String(today.getMonth() + 1).padStart(2, "0");
+    const day = String(today.getDate()).padStart(2, "0");
 
+    return `${year}-${month}-${day}`;
+}
 
-export default function HomePage(){
+function formatDate(value: string) {
+    return new Intl.DateTimeFormat("ru-RU", {
+        day: "numeric",
+        month: "long",
+        weekday: "short",
+    }).format(new Date(`${value}T00:00:00`));
+}
 
+export default function HomePage() {
+    const [selectedDate, setSelectedDate] = useState(todayString());
+    const [selectedTime, setSelectedTime] = useState("19:30");
+    const [selectedTable, setSelectedTable] = useState<Table | null>(null);
+    const [bookingTable, setBookingTable] = useState<Table | null>(null);
+    const [isBookingOpen, setIsBookingOpen] = useState(false);
+    const [isDatePickerOpen, setIsDatePickerOpen] = useState(false);
+    const [bookingDraft, setBookingDraft] = useState<BookingDraft | null>(null);
+    const [tables, setTables] = useState<Table[]>(initialFloorTables);
+    const [editingBooking, setEditingBooking] = useState<Booking | null>(null);
 
-    const [selectedDate,setSelectedDate] =
-        useState(
-            "2026-07-21"
-        );
+    const [guestsDirectory, setGuestsDirectory] = useState<Guest[]>([
+        {
+            id: 1,
+            name: "Виталя",
+            phone: "+79999999999",
+            tags: ["Постоянный"],
+            comment: "Любит блэк шип",
+        },
+    ]);
 
+    const [bookings, setBookings] = useState<Booking[]>([
+        {
+            id: 1,
+            tableId: 13,
+            date: todayString(),
+            startTime: "19:30",
+            endTime: "21:00",
+            guests: 4,
+            status: "reserved",
+            guest: {
+                name: "Виталя",
+                phone: "+79999999999",
+                tags: ["Постоянный"],
+                comment: "Любит блэк шип",
+            },
+        },
+    ]);
 
-    const [selectedTime,setSelectedTime] =
-        useState(
-            "19:30"
-        );
+    const headerDate = useMemo(() => formatDate(selectedDate), [selectedDate]);
 
-
-
-    const [selectedTable,setSelectedTable] =
-        useState<Table | null>(null);
-
-
-
-    const [isBookingOpen,setIsBookingOpen] =
-        useState(false);
-
-
-
-    const [bookingTable,setBookingTable] =
-        useState<Table | null>(null);
-
-
-
-
-    const [bookings,setBookings] =
-        useState<Booking[]>([
-
-
-            {
-
-                id:1,
-
-                tableId:13,
-
-                date:"2026-07-21",
-
-                startTime:"14:30",
-
-                endTime:"17:15",
-
-                guests:4,
-
-                status:"reserved",
-
-
-                guest:{
-
-                    name:"Виталя",
-
-                    phone:"+79999999999",
-
-                    tags:[
-                        "Постоянный"
-                    ],
-
-                    comment:
-                        "Любит блек шип"
-
-                }
-
-            }
-
-
-
-        ]);
-
-
-
-
-
-    function openBooking(){
-
-
-        setBookingTable(
-            selectedTable
-        );
-
-
+    const openBooking = useCallback(() => {
+        setEditingBooking(null);
+        setBookingTable(selectedTable);
         setIsBookingOpen(true);
-
-
-    }
-
-
-
-
-
-
-    function selectTable(table:Table){
-
-
-        setSelectedTable(table);
-
-
-    }
-
-
-
-
-
-
-
-    return (
-
-
-        <div
-
-            className="
-            h-screen
-            bg-[#10211D]
-            text-white
-            overflow-hidden
-            "
-
-        >
-
-
-
-            <header
-
-                className="
-                h-20
-                border-b
-                border-white/10
-                px-8
-                flex
-                items-center
-                justify-between
-                relative
-                "
-
-            >
-
-
-
-                <div
-
-                    className="
-                    flex
-                    items-center
-                    gap-4
-                    "
-
-                >
-
-
-                    <div
-
-                        className="
-                        w-12
-                        h-12
-                        rounded-2xl
-                        bg-[#D7A441]
-                        flex
-                        items-center
-                        justify-center
-                        text-black
-                        font-bold
-                        text-xl
-                        "
-
-                    >
-
-                        G
-
-                    </div>
-
-
-
-                    <div>
-
-
-                        <h1 className="text-xl font-semibold">
-
-                            Гусь и Огурчик
-
-                        </h1>
-
-
-                        <p className="text-sm text-white/50">
-
-                            Система бронирования
-
-                        </p>
-
-
-                    </div>
-
-
-                </div>
-
-
-
-
-
-                <div
-
-                    className="
-                    absolute
-                    left-1/2
-                    -translate-x-1/2
-                    "
-
-                >
-
-                    <button
-
-                        className="
-                        bg-white/10
-                        px-6
-                        py-3
-                        rounded-xl
-                        "
-
-                    >
-
-                        Сегодня
-
-                        <span className="ml-3 text-white/50">
-
-                            {selectedTime}
-
-                        </span>
-
-
-                    </button>
-
-
-                </div>
-
-
-
-
-            </header>
-
-
-
-
-
-
-            <main
-
-                className="
-                h-[calc(100vh-80px)]
-                grid
-                grid-cols-[1fr_360px]
-                "
-
-            >
-
-
-
-                <section
-
-                    className="
-                    relative
-                    overflow-hidden
-                    "
-
-                >
-
-
-                    <FloorPlan
-
-
-                        bookings={bookings}
-
-
-                        selectedDate={selectedDate}
-
-
-                        selectedTime={selectedTime}
-
-
-                        onSelectTable={selectTable}
-
-
-                        selectedTableId={
-                            selectedTable?.id
-                        }
-
-
-                    />
-
-
-
-                    <button
-
-                        onClick={openBooking}
-
-
-                        className="
-                        absolute
-                        right-8
-                        bottom-8
-
-                        bg-[#D7A441]
-
-                        text-black
-
-                        px-8
-                        py-4
-
-                        rounded-2xl
-
-                        font-semibold
-
-                        text-lg
-
-                        shadow-xl
-
-                        "
-
-                    >
-
-                        Создать бронь
-
-
-                    </button>
-
-
-
-                </section>
-
-
-
-
-
-
-                <aside
-
-                    className="
-                    border-l
-                    border-white/10
-                    "
-
-                >
-
-
-
-                    <TablePanel
-
-
-                        table={selectedTable}
-
-
-                        bookings={bookings}
-
-
-                        setBookings={setBookings}
-
-
-                        selectedDate={selectedDate}
-
-
-                        onClose={()=>
-
-                            setSelectedTable(null)
-
-                        }
-
-
-                    />
-
-
-
-                </aside>
-
-
-
-            </main>
-
-
-
-
-        </div>
-
-
+    }, [selectedTable]);
+
+    const closeBooking = useCallback(() => {
+        setIsBookingOpen(false);
+        setBookingDraft(null);
+        setBookingTable(null);
+        setEditingBooking(null);
+    }, []);
+
+    const selectTable = useCallback(
+        (table: Table) => {
+            setSelectedTable(table);
+
+            if (isBookingOpen) {
+                setBookingTable(table);
+            }
+        },
+        [isBookingOpen]
     );
 
+    return (
+        <div className="h-screen overflow-hidden bg-[#10211D] text-white">
+            <header className="relative flex h-20 items-center justify-between border-b border-white/10 px-8">
+                <div className="flex items-center gap-4">
+                    <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-[#D7A441] text-xl font-bold text-black">
+                        G
+                    </div>
+
+                    <div>
+                        <h1 className="text-xl font-semibold">Гусь и Огурчик</h1>
+                        <p className="text-sm text-white/50">Система бронирования</p>
+                    </div>
+                </div>
+
+                <div className="absolute left-1/2 -translate-x-1/2">
+                    <button
+                        type="button"
+                        onClick={() => setIsDatePickerOpen(true)}
+                        className="rounded-xl bg-white/10 px-6 py-3 transition hover:bg-white/15"
+                    >
+                        <span className="capitalize">{headerDate}</span>
+                        <span className="ml-3 text-white/50">{selectedTime}</span>
+                    </button>
+                </div>
+            </header>
+
+            <DateTimePopover
+                open={isDatePickerOpen}
+                selectedDate={selectedDate}
+                selectedTime={selectedTime}
+                onClose={() => setIsDatePickerOpen(false)}
+                onApply={(date, time) => {
+                    setSelectedDate(date);
+                    setSelectedTime(time);
+                }}
+            />
+
+            <main className="grid h-[calc(100vh-80px)] grid-cols-[1fr_440px]">
+                <section className="relative overflow-hidden">
+                    <FloorPlan
+                        tables={tables}
+                        bookings={bookings}
+                        selectedDate={selectedDate}
+                        selectedTime={selectedTime}
+                        bookingDraft={isBookingOpen ? bookingDraft : null}
+                        onSelectTable={selectTable}
+                        selectedTableId={selectedTable?.id}
+                        bookingTableId={bookingTable?.id}
+                    />
+                </section>
+
+                {isBookingOpen ? (
+                    <BookingModal
+                        open={isBookingOpen}
+                        table={bookingTable}
+                        booking={editingBooking}
+                        bookings={bookings}
+                        selectedDate={selectedDate}
+                        selectedTime={selectedTime}
+                        guestsDirectory={guestsDirectory}
+                        onClose={closeBooking}
+                        onDraftChange={setBookingDraft}
+                        onCreate={(booking, guest) => {
+                            setBookings((currentBookings) => [
+                                ...currentBookings,
+                                {
+                                    ...booking,
+                                    id: Date.now(),
+                                },
+                            ]);
+
+                            setGuestsDirectory((currentGuests) => {
+                                const exists = currentGuests.some(
+                                    (currentGuest) => currentGuest.phone === guest.phone
+                                );
+
+                                return exists ? currentGuests : [...currentGuests, guest];
+                            });
+
+                            const nextSelectedTable =
+                                tables.find((table) => table.id === booking.tableId) ?? null;
+
+                            setSelectedDate(booking.date);
+                            setSelectedTime(booking.startTime);
+                            setSelectedTable(nextSelectedTable);
+                            closeBooking();
+                        }}
+                        onUpdate={(booking, guest) => {
+                            setBookings((currentBookings) =>
+                                currentBookings.map((currentBooking) =>
+                                    currentBooking.id === booking.id ? booking : currentBooking
+                                )
+                            );
+
+                            setGuestsDirectory((currentGuests) => {
+                                const exists = currentGuests.some(
+                                    (currentGuest) => currentGuest.phone === guest.phone
+                                );
+
+                                return exists
+                                    ? currentGuests.map((currentGuest) =>
+                                          currentGuest.phone === guest.phone
+                                              ? {
+                                                    ...currentGuest,
+                                                    name: guest.name,
+                                                    tags: guest.tags,
+                                                    comment: guest.comment,
+                                                }
+                                              : currentGuest
+                                      )
+                                    : [...currentGuests, guest];
+                            });
+
+                            const nextSelectedTable =
+                                tables.find((table) => table.id === booking.tableId) ?? null;
+
+                            setSelectedDate(booking.date);
+                            setSelectedTime(booking.startTime);
+                            setSelectedTable(nextSelectedTable);
+                            closeBooking();
+                        }}
+                    />
+                ) : (
+                    <TablePanel
+                        table={selectedTable}
+                        bookings={bookings}
+                        selectedDate={selectedDate}
+                        onClose={() => setSelectedTable(null)}
+                        onEditBooking={(booking) => {
+                            const table =
+                                tables.find((currentTable) => currentTable.id === booking.tableId) ??
+                                null;
+
+                            setSelectedTable(table);
+                            setBookingTable(table);
+                            setEditingBooking(booking);
+                            setIsBookingOpen(true);
+                        }}
+                        onBlockTable={(tableId, reason) => {
+                            setTables((currentTables) =>
+                                currentTables.map((table) =>
+                                    table.id === tableId
+                                        ? {
+                                              ...table,
+                                              status: "blocked",
+                                              blockReason: reason,
+                                          }
+                                        : table
+                                )
+                            );
+                            setSelectedTable((currentTable) =>
+                                currentTable?.id === tableId
+                                    ? {
+                                          ...currentTable,
+                                          status: "blocked",
+                                          blockReason: reason,
+                                      }
+                                    : currentTable
+                            );
+                        }}
+                        onUnblockTable={(tableId) => {
+                            setTables((currentTables) =>
+                                currentTables.map((table) =>
+                                    table.id === tableId
+                                        ? {
+                                              id: table.id,
+                                              seats: table.seats,
+                                              status: "free",
+                                          }
+                                        : table
+                                )
+                            );
+                            setSelectedTable((currentTable) =>
+                                currentTable?.id === tableId
+                                    ? {
+                                          id: currentTable.id,
+                                          seats: currentTable.seats,
+                                          status: "free",
+                                      }
+                                    : currentTable
+                            );
+                        }}
+                    />
+                )}
+            </main>
+
+            {!isBookingOpen && (
+                <button
+                    type="button"
+                    onClick={openBooking}
+                    className="
+                        fixed bottom-8 right-8 z-40 rounded-2xl bg-[#D7A441]
+                        min-w-80 px-12 py-4 text-lg font-semibold text-black shadow-xl
+                        transition hover:bg-[#e0b45d]
+                    "
+                >
+                    Новая бронь
+                </button>
+            )}
+
+        </div>
+    );
 }
