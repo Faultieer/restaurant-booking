@@ -174,7 +174,7 @@ export default function HomePage() {
                 }}
             />
 
-            <main className="grid h-[calc(100vh-80px)] grid-cols-[1fr_500px]">
+            <main className="grid h-[calc(100vh-80px)] grid-cols-[1fr_500px] xl:grid-cols-[1fr_560px] 2xl:grid-cols-[1fr_640px]">
                 <section className="relative overflow-hidden">
                     <FloorPlan
                         tables={tables}

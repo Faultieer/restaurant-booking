@@ -248,38 +248,36 @@ export default function BookingModal({
                     </div>
 
                     {/* Время */}
-                    <div className="rounded-2xl bg-white/5 p-4">
-                        <div className="mb-3 text-sm font-medium text-white/60">Время начала</div>
-                        <div className="grid grid-cols-[64px_1fr_64px] items-center gap-3">
+                    <div className="text-sm font-medium text-white/60">
+                        Время начала
+                        <div className="mt-2 grid grid-cols-[48px_1fr_48px] items-center gap-2">
                             <button
                                 type="button"
                                 onClick={() => setTime((t) => changeTime(t, -15))}
-                                className="h-16 rounded-2xl bg-white/10 text-3xl font-semibold transition active:scale-95 hover:bg-white/15"
+                                className="h-12 rounded-xl bg-white/10 text-2xl font-semibold transition active:scale-95 hover:bg-white/15"
                                 aria-label="−15 мин"
                             >
                                 −
                             </button>
-                            <div className="flex h-16 items-center justify-center rounded-2xl bg-[#D7A441] text-3xl font-bold text-black tracking-wide">
+                            <div className="flex h-12 items-center justify-center rounded-xl bg-[#D7A441] text-2xl font-bold text-black tracking-wide">
                                 {time}
                             </div>
                             <button
                                 type="button"
                                 onClick={() => setTime((t) => changeTime(t, 15))}
-                                className="h-16 rounded-2xl bg-white/10 text-3xl font-semibold transition active:scale-95 hover:bg-white/15"
+                                className="h-12 rounded-xl bg-white/10 text-2xl font-semibold transition active:scale-95 hover:bg-white/15"
                                 aria-label="+15 мин"
                             >
                                 +
                             </button>
                         </div>
-
-                        {/* Быстрый выбор времени */}
-                        <div className="mt-3 grid grid-cols-4 gap-2">
+                        <div className="mt-2 grid grid-cols-6 gap-1.5">
                             {quickTimes.map((qt) => (
                                 <button
                                     key={qt}
                                     type="button"
                                     onClick={() => setTime(qt)}
-                                    className={`h-12 rounded-xl text-sm font-semibold transition active:scale-95
+                                    className={`h-10 rounded-xl text-xs font-semibold transition active:scale-95
                                         ${time === qt
                                             ? "bg-[#D7A441] text-black"
                                             : "bg-white/10 text-white hover:bg-white/15"}`}
@@ -296,7 +294,7 @@ export default function BookingModal({
                         <select
                             value={durationMinutes}
                             onChange={(e) => setDurationMinutes(Number(e.target.value))}
-                            className="mt-2 h-14 w-full rounded-2xl border border-white/10 bg-white/10 px-4 text-base text-white"
+                            className="mt-2 h-14 w-full rounded-2xl border border-white/10 bg-[#18322C] px-4 text-base text-white [color-scheme:dark]"
                         >
                             {durationOptions.map((d) => (
                                 <option key={d} value={d}>{formatDuration(d)}</option>
