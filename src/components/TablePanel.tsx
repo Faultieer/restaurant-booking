@@ -112,7 +112,8 @@ export default function TablePanel({
 
     if (!table) {
         return (
-            <aside className="h-full border-l border-white/10 bg-[#10211D] p-6 text-white">
+            // Empty state — visible only on desktop (mobile shows nothing when no table selected)
+            <aside className="hidden md:block h-full border-l border-white/10 bg-[#10211D] p-6 text-white">
                 <div className="rounded-2xl border border-white/10 bg-white/5 p-5">
                     <h2 className="text-lg font-semibold">Стол не выбран</h2>
                     <p className="mt-2 text-sm text-white/50">
@@ -127,7 +128,17 @@ export default function TablePanel({
     const reason = blockReason === "другая причина" ? customReason.trim() : blockReason;
 
     return (
-        <aside className="h-full overflow-y-auto border-l border-white/10 bg-[#10211D] p-6 text-white">
+        <aside className="
+            fixed inset-x-0 bottom-0 z-50 max-h-[85vh] overflow-y-auto
+            rounded-t-3xl border-t border-white/10 bg-[#10211D] text-white
+            md:static md:inset-auto md:z-auto md:h-full md:max-h-none
+            md:rounded-none md:border-t-0 md:border-l
+        ">
+            {/* Drag handle (mobile only) */}
+            <div className="flex justify-center pt-3 pb-1 md:hidden">
+                <div className="h-1 w-10 rounded-full bg-white/20" />
+            </div>
+            <div className="p-6 pb-safe-4 md:p-6 md:pb-6">
             <div className="flex justify-between gap-4">
                 <div>
                     <h2 className="text-2xl font-bold">Стол №{table.id}</h2>
@@ -266,7 +277,7 @@ export default function TablePanel({
                     )
                 )}
             </div>
-
+            </div>{/* /p-6 wrapper */}
         </aside>
     );
 }

@@ -201,7 +201,17 @@ export default function BookingModal({
     if (!open) return null;
 
     return (
-        <aside className="h-full overflow-y-auto border-l border-white/10 bg-[#10211D] p-4 text-white">
+        <aside className="
+            fixed inset-x-0 bottom-0 z-50 max-h-[85vh] overflow-y-auto
+            rounded-t-3xl border-t border-white/10 bg-[#10211D] text-white
+            md:static md:inset-auto md:z-auto md:h-full md:max-h-none
+            md:rounded-none md:border-t-0 md:border-l
+        ">
+            {/* Drag handle (mobile only) */}
+            <div className="flex justify-center pt-3 pb-1 md:hidden">
+                <div className="h-1 w-10 rounded-full bg-white/20" />
+            </div>
+            <div className="p-4 pb-safe-4 md:p-4 md:pb-4">
             <div className="rounded-3xl border border-white/10 bg-[#18322C] p-5 shadow-2xl">
 
                 {/* Заголовок */}
@@ -289,18 +299,30 @@ export default function BookingModal({
                     </div>
 
                     {/* Длительность */}
-                    <label className="block text-sm font-medium text-white/60">
+                    <div className="text-sm font-medium text-white/60">
                         Длительность
-                        <select
-                            value={durationMinutes}
-                            onChange={(e) => setDurationMinutes(Number(e.target.value))}
-                            className="mt-2 h-14 w-full rounded-2xl border border-white/10 bg-[#18322C] px-4 text-base text-white [color-scheme:dark]"
-                        >
-                            {durationOptions.map((d) => (
-                                <option key={d} value={d}>{formatDuration(d)}</option>
-                            ))}
-                        </select>
-                    </label>
+                        <div className="mt-2 grid grid-cols-[48px_1fr_48px] items-center gap-2">
+                            <button
+                                type="button"
+                                onClick={() => setDurationMinutes((d) => Math.max(30, d - 30))}
+                                className="h-12 rounded-xl bg-white/10 text-2xl font-semibold transition active:scale-95 hover:bg-white/15"
+                                aria-label="−30 мин"
+                            >
+                                −
+                            </button>
+                            <div className="flex h-12 items-center justify-center rounded-xl bg-white/10 text-base font-semibold text-white">
+                                {formatDuration(durationMinutes)}
+                            </div>
+                            <button
+                                type="button"
+                                onClick={() => setDurationMinutes((d) => Math.min(360, d + 30))}
+                                className="h-12 rounded-xl bg-white/10 text-2xl font-semibold transition active:scale-95 hover:bg-white/15"
+                                aria-label="+30 мин"
+                            >
+                                +
+                            </button>
+                        </div>
+                    </div>
 
                     {/* Количество гостей */}
                     <div className="text-sm font-medium text-white/60">
@@ -469,6 +491,7 @@ export default function BookingModal({
                     </div>
                 )}
             </div>
+            </div>{/* /p-4 wrapper */}
         </aside>
     );
 }

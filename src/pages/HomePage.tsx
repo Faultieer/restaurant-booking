@@ -174,8 +174,8 @@ export default function HomePage() {
                 }}
             />
 
-            <main className="grid h-[calc(100vh-80px)] grid-cols-[1fr_500px] xl:grid-cols-[1fr_560px] 2xl:grid-cols-[1fr_640px]">
-                <section className="relative overflow-hidden">
+            <main className="relative h-[calc(100vh-80px)] md:grid md:grid-cols-[1fr_500px] xl:grid-cols-[1fr_560px] 2xl:grid-cols-[1fr_640px]">
+                <section className="relative h-full overflow-auto md:overflow-hidden">
                     <FloorPlan
                         tables={tables}
                         bookings={bookings}
@@ -187,6 +187,17 @@ export default function HomePage() {
                         bookingTableId={bookingTable?.id}
                     />
                 </section>
+
+                {/* Mobile backdrop — closes panel on tap outside */}
+                {(isBookingOpen || selectedTable) && (
+                    <div
+                        className="fixed inset-0 z-40 bg-black/60 md:hidden"
+                        onClick={() => {
+                            if (isBookingOpen) closeBooking();
+                            else setSelectedTable(null);
+                        }}
+                    />
+                )}
 
                 {isBookingOpen ? (
                     <BookingModal
@@ -332,11 +343,15 @@ export default function HomePage() {
                 <button
                     type="button"
                     onClick={openBooking}
-                    className="
-                        fixed bottom-8 right-8 z-40 rounded-2xl bg-[#D7A441]
-                        min-w-80 px-12 py-4 text-lg font-semibold text-black shadow-xl
-                        transition hover:bg-[#e0b45d]
-                    "
+                    className={[
+                        "fixed z-40 rounded-2xl bg-[#D7A441] font-semibold text-black shadow-xl",
+                        "transition hover:bg-[#e0b45d] active:scale-[.98]",
+                        // Mobile: full-width at bottom, hide when table panel is open
+                        "bottom-safe-4 left-4 right-4 py-4 text-base",
+                        // Desktop: compact pill on right
+                        "md:bottom-8 md:left-auto md:right-8 md:min-w-80 md:px-12 md:py-4 md:text-lg",
+                        selectedTable ? "hidden md:block" : "",
+                    ].join(" ")}
                 >
                     Новая бронь
                 </button>

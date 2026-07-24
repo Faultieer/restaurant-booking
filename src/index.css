@@ -1,10 +1,13 @@
 @import "tailwindcss";
 @import "./styles/theme.css";
-.no-scrollbar::-webkit-scrollbar {
-    display: none;
-}
 
-.no-scrollbar {
-    -ms-overflow-style: none;
-    scrollbar-width: none;
+/* Safe area for iPhone notch / home bar */
+:root {
+  --safe-bottom: env(safe-area-inset-bottom, 0px);
 }
+.pb-safe { padding-bottom: env(safe-area-inset-bottom, 0px); }
+.pb-safe-4 { padding-bottom: max(1rem, env(safe-area-inset-bottom, 0px)); }
+.bottom-safe-4 { bottom: max(1rem, env(safe-area-inset-bottom, 0px)); }
+
+.no-scrollbar::-webkit-scrollbar { display: none; }
+.no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
