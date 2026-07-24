@@ -1,6 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 
-import TimeWheel from "./TimeWheel";
 import type { Booking, Guest, Table } from "../pages/HomePage";
 
 type BookingDraft = {
@@ -22,10 +21,10 @@ type BookingModalProps = {
     onDraftChange: (draft: BookingDraft | null) => void;
     onCreate: (booking: Omit<Booking, "id">, guest: Guest) => void;
     onUpdate: (booking: Booking, guest: Guest) => void;
+    onDelete: (bookingId: number) => void;
 };
 
 const durationOptions = Array.from({ length: 12 }, (_, index) => (index + 1) * 30);
-const guestValues = Array.from({ length: 12 }, (_, i) => String(i + 1));
 const quickTimes = ["13:00", "14:00", "15:00", "16:00", "17:00", "18:00", "19:00", "19:30", "20:00", "20:30", "21:00", "22:00"];
 
 function timeToMinutes(time: string) {
@@ -90,6 +89,7 @@ export default function BookingModal({
     onDraftChange,
     onCreate,
     onUpdate,
+    onDelete,
 }: BookingModalProps) {
     const [date, setDate] = useState(selectedDate);
     const [time, setTime] = useState(selectedTime);
@@ -270,33 +270,43 @@ export default function BookingModal({
                         </div>
                     </div>
 
-                    <div className="grid grid-cols-2 gap-3">
-                        <label className="text-sm text-white/60">
-                            Длительность
-                            <select
-                                value={durationMinutes}
-                                onChange={(event) => setDurationMinutes(Number(event.target.value))}
-                                className="mt-2 h-12 w-full rounded-xl border border-white/10 bg-white/10 px-3 text-base text-white"
-                            >
-                                {durationOptions.map((duration) => (
-                                    <option key={duration} value={duration}>
-                                        {formatDuration(duration)}
-                                    </option>
-                                ))}
-                            </select>
-                        </label>
+                    <label className="text-sm text-white/60">
+                        Длительность
+                        <select
+                            value={durationMinutes}
+                            onChange={(event) => setDurationMinutes(Number(event.target.value))}
+                            className="mt-2 h-12 w-full rounded-xl border border-white/10 bg-white/10 px-3 text-base text-white"
+                        >
+                            {durationOptions.map((duration) => (
+                                <option key={duration} value={duration}>
+                                    {formatDuration(duration)}
+                                </option>
+                            ))}
+                        </select>
+                    </label>
 
-                        <div className="text-sm text-white/60">
-                            Гостей
-                            <div className="mt-2 rounded-2xl bg-white/5 px-4 py-1">
-                                <TimeWheel
-                                    values={guestValues}
-                                    value={String(guestCount)}
-                                    onChange={(v) => setGuestCount(Number(v))}
-                                    height={120}
-                                    itemHeight={40}
-                                />
+                    <div className="text-sm text-white/60">
+                        Гостей
+                        <div className="mt-2 grid grid-cols-[44px_1fr_44px] items-center gap-2">
+                            <button
+                                type="button"
+                                onClick={() => setGuestCount((n) => Math.max(1, n - 1))}
+                                className="h-11 rounded-xl bg-white/10 text-xl font-semibold transition hover:bg-white/15"
+                                aria-label="Уменьшить"
+                            >
+                                −
+                            </button>
+                            <div className="flex h-11 items-center justify-center rounded-xl bg-white/10 text-base font-semibold text-white">
+                                {guestCount} {guestCount === 1 ? "гость" : guestCount < 5 ? "гостя" : "гостей"}
                             </div>
+                            <button
+                                type="button"
+                                onClick={() => setGuestCount((n) => Math.min(12, n + 1))}
+                                className="h-11 rounded-xl bg-white/10 text-xl font-semibold transition hover:bg-white/15"
+                                aria-label="Увеличить"
+                            >
+                                +
+                            </button>
                         </div>
                     </div>
                     <label className="block text-sm text-white/60">
@@ -373,13 +383,7 @@ export default function BookingModal({
                         };
 
                         if (booking) {
-                            onUpdate(
-                                {
-                                    ...nextBooking,
-                                    id: booking.id,
-                                },
-                                nextGuest
-                            );
+                            onUpdate({ ...nextBooking, id: booking.id }, nextGuest);
                             return;
                         }
 
@@ -393,6 +397,23 @@ export default function BookingModal({
                 >
                     {booking ? "Сохранить изменения" : "Создать бронирование"}
                 </button>
+
+                {booking && (
+                    <button
+                        type="button"
+                        onClick={() => {
+                            onDelete(booking.id);
+                            onClose();
+                        }}
+                        className="
+                            mt-3 w-full rounded-2xl border border-[#D25A5A]/40
+                            bg-[#D25A5A]/15 px-4 py-3 font-semibold text-[#D25A5A]
+                            transition hover:bg-[#D25A5A]/25
+                        "
+                    >
+                        Удалить бронирование
+                    </button>
+                )}
             </div>
         </aside>
     );

@@ -224,6 +224,11 @@ export default function HomePage() {
                             setSelectedTable(nextSelectedTable);
                             closeBooking();
                         }}
+                        onDelete={(bookingId) => {
+                            setBookings((current) =>
+                                current.filter((b) => b.id !== bookingId)
+                            );
+                        }}
                         onUpdate={(booking, guest) => {
                             setBookings((currentBookings) =>
                                 currentBookings.map((currentBooking) =>
