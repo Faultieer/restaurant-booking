@@ -166,7 +166,13 @@ export default function TablePanel({
                 </div>
             </div>
 
-            <div className="mt-4 text-white/50">{selectedDate}</div>
+            <div className="mt-4 capitalize text-white/50">
+                {new Intl.DateTimeFormat("ru-RU", {
+                    day: "numeric",
+                    month: "long",
+                    weekday: "short",
+                }).format(new Date(`${selectedDate}T00:00:00`))}
+            </div>
 
             <div className="my-5 h-px bg-white/10" />
 

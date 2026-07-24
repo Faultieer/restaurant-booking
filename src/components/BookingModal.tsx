@@ -1,5 +1,6 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 
+import TimeWheel from "./TimeWheel";
 import type { Booking, Guest, Table } from "../pages/HomePage";
 
 type BookingDraft = {
@@ -24,6 +25,7 @@ type BookingModalProps = {
 };
 
 const durationOptions = Array.from({ length: 12 }, (_, index) => (index + 1) * 30);
+const guestValues = Array.from({ length: 12 }, (_, i) => String(i + 1));
 const quickTimes = ["13:00", "14:00", "15:00", "16:00", "17:00", "18:00", "19:00", "19:30", "20:00", "20:30", "21:00", "22:00"];
 
 function timeToMinutes(time: string) {
@@ -93,6 +95,10 @@ export default function BookingModal({
     const [time, setTime] = useState(selectedTime);
     const [durationMinutes, setDurationMinutes] = useState(120);
     const [guestCount, setGuestCount] = useState(2);
+
+    // Remember initial values so useEffect doesn't re-trigger on header date/time changes
+    const initialDateRef = useRef(selectedDate);
+    const initialTimeRef = useRef(selectedTime);
     const [phone, setPhone] = useState("");
     const [name, setName] = useState("");
     const [comment, setComment] = useState("");
@@ -134,8 +140,10 @@ export default function BookingModal({
     useEffect(() => {
         if (!open) return;
 
-        setDate(booking?.date ?? selectedDate);
-        setTime(booking?.startTime ?? selectedTime);
+        // Use refs to capture the initial date/time when modal opens,
+        // so the form doesn't reset if the user changes header date while modal is open.
+        setDate(booking?.date ?? initialDateRef.current);
+        setTime(booking?.startTime ?? initialTimeRef.current);
         setDurationMinutes(
             booking
                 ? timeToMinutes(booking.endTime) - timeToMinutes(booking.startTime)
@@ -145,7 +153,7 @@ export default function BookingModal({
         setPhone(booking?.guest.phone ?? "");
         setName(booking?.guest.name ?? "");
         setComment(booking?.guest.comment ?? "");
-    }, [booking, open, selectedDate, selectedTime]);
+    }, [booking, open]);
 
     useEffect(() => {
         if (!open) {
@@ -162,10 +170,14 @@ export default function BookingModal({
     }, [date, durationMinutes, guestCount, onDraftChange, open, time]);
 
     useEffect(() => {
-        if (!foundGuest) return;
-
-        setName(foundGuest.name);
-        setComment(foundGuest.comment);
+        if (foundGuest) {
+            setName(foundGuest.name);
+            setComment(foundGuest.comment);
+        } else {
+            // Clear auto-filled fields when phone no longer matches a known guest
+            setName("");
+            setComment("");
+        }
     }, [foundGuest]);
 
     if (!open) return null;
@@ -264,7 +276,7 @@ export default function BookingModal({
                             <select
                                 value={durationMinutes}
                                 onChange={(event) => setDurationMinutes(Number(event.target.value))}
-                            className="mt-2 h-12 w-full rounded-xl border border-white/10 bg-white/10 px-3 text-base text-white"
+                                className="mt-2 h-12 w-full rounded-xl border border-white/10 bg-white/10 px-3 text-base text-white"
                             >
                                 {durationOptions.map((duration) => (
                                     <option key={duration} value={duration}>
@@ -274,16 +286,18 @@ export default function BookingModal({
                             </select>
                         </label>
 
-                        <label className="text-sm text-white/60">
+                        <div className="text-sm text-white/60">
                             Гостей
-                            <input
-                                type="number"
-                                min={1}
-                                value={guestCount}
-                                onChange={(event) => setGuestCount(Number(event.target.value))}
-                            className="mt-2 h-12 w-full rounded-xl border border-white/10 bg-white/10 px-3 text-base text-white"
-                            />
-                        </label>
+                            <div className="mt-2 rounded-2xl bg-white/5 px-4 py-1">
+                                <TimeWheel
+                                    values={guestValues}
+                                    value={String(guestCount)}
+                                    onChange={(v) => setGuestCount(Number(v))}
+                                    height={120}
+                                    itemHeight={40}
+                                />
+                            </div>
+                        </div>
                     </div>
                     <label className="block text-sm text-white/60">
                         Телефон
