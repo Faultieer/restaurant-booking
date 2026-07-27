@@ -148,17 +148,23 @@ export default function HomePage() {
   const handleCreate = useCallback(
     async (bookingData: Omit<Booking, "id">, guest: { id?: number; name: string; phone: string; tags: string[]; comment: string }) => {
       try {
-        // Upsert guest first, then create booking
-        const savedGuest = await upsertGuest({ id: guest.id ?? 0, ...guest });
+        // Walk-in: no guest contact info — skip upsert
+        const isWalkIn = !guest.phone.trim();
+        const savedGuest = isWalkIn
+          ? { id: 0, name: "", phone: "", tags: [], comment: "" }
+          : await upsertGuest({ id: guest.id ?? 0, ...guest });
+
         const saved = await createBooking({ ...bookingData, guest: savedGuest });
 
         setBookings((prev) => [...prev, saved]);
-        setGuestsDirectory((prev) => {
-          const exists = prev.some((g) => g.phone === savedGuest.phone);
-          return exists
-            ? prev.map((g) => g.phone === savedGuest.phone ? savedGuest : g)
-            : [...prev, savedGuest];
-        });
+        if (!isWalkIn) {
+          setGuestsDirectory((prev) => {
+            const exists = prev.some((g) => g.phone === savedGuest.phone);
+            return exists
+              ? prev.map((g) => g.phone === savedGuest.phone ? savedGuest : g)
+              : [...prev, savedGuest];
+          });
+        }
 
         const nextTable = tables.find((t) => t.id === saved.tableId) ?? null;
         setSelectedDate(saved.date);

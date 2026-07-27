@@ -117,6 +117,7 @@ export default function BookingModal({
     onUpdate,
     onDelete,
 }: BookingModalProps) {
+    const [isWalkIn, setIsWalkIn] = useState(false);
     const [date, setDate] = useState(selectedDate);
     const [time, setTime] = useState(selectedTime);
     const [durationMinutes, setDurationMinutes] = useState(120);
@@ -153,8 +154,8 @@ export default function BookingModal({
         if (!time) return "Выберите время.";
         if (!durationMinutes) return "Выберите продолжительность.";
         if (!guestCount || guestCount < 1) return "Укажите количество гостей.";
-        if (!phoneComplete) return "Введите номер телефона полностью.";
-        if (!foundGuest && !name.trim()) return "Укажите имя нового гостя.";
+        if (!isWalkIn && !phoneComplete) return "Введите номер телефона полностью.";
+        if (!isWalkIn && !foundGuest && !name.trim()) return "Укажите имя нового гостя.";
         if (!table) return "Выберите стол на плане.";
         if (table.status === "blocked")
             return table.blockReason
@@ -163,7 +164,16 @@ export default function BookingModal({
         if (guestCount > table.seats) return "Количество гостей превышает вместимость стола.";
         if (conflict) return `Стол занят с ${conflict.startTime} до ${conflict.endTime}.`;
         return "";
-    }, [conflict, date, durationMinutes, foundGuest, guestCount, name, phoneComplete, table, time]);
+    }, [conflict, date, durationMinutes, foundGuest, guestCount, isWalkIn, name, phoneComplete, table, time]);
+
+    // История броней найденного гостя
+    const guestHistory = useMemo(() => {
+        if (!foundGuest) return [];
+        return bookings
+            .filter((b) => phoneDigits(b.guest.phone) === phoneDigits(foundGuest.phone) && b.status !== "cancelled")
+            .sort((a, b) => (a.date + a.startTime) > (b.date + b.startTime) ? -1 : 1)
+            .slice(0, 5);
+    }, [bookings, foundGuest]);
 
     // Инициализация формы при открытии
     useEffect(() => {
@@ -178,6 +188,7 @@ export default function BookingModal({
         setName(booking?.guest.name ?? "");
         setComment(booking?.guest.comment ?? "");
         setConfirmDelete(false);
+        setIsWalkIn(false);
     }, [booking, open]);
 
     // Обновляем draft для плана зала
@@ -350,53 +361,122 @@ export default function BookingModal({
                         </div>
                     </div>
 
-                    {/* Разделитель */}
+                        {/* Разделитель + переключатель режима */}
                     <div className="h-px bg-white/10" />
 
-                    {/* Телефон */}
-                    <label className="block text-sm font-medium text-white/60">
-                        Телефон гостя
-                        <div className="relative mt-2">
-                            <input
-                                type="tel"
-                                inputMode="numeric"
-                                value={phone}
-                                onChange={(e) => setPhone(formatPhone(e.target.value))}
-                                placeholder="+7 (___) ___-__-__"
-                                className="h-14 w-full rounded-2xl border border-white/10 bg-white/10 px-4 text-base text-white placeholder:text-white/25"
-                            />
-                            {foundGuest && (
-                                <span className="absolute right-4 top-1/2 -translate-y-1/2 rounded-lg bg-[#4DB980]/20 px-2 py-1 text-xs font-semibold text-[#4DB980]">
-                                    известен
-                                </span>
-                            )}
+                    {!booking && (
+                        <div className="grid grid-cols-2 gap-2">
+                            <button
+                                type="button"
+                                onClick={() => setIsWalkIn(false)}
+                                className={`h-11 rounded-2xl text-sm font-semibold transition ${
+                                    !isWalkIn
+                                        ? "bg-[#D7A441] text-black"
+                                        : "bg-white/10 text-white/60 hover:bg-white/15"
+                                }`}
+                            >
+                                Бронь
+                            </button>
+                            <button
+                                type="button"
+                                onClick={() => setIsWalkIn(true)}
+                                className={`h-11 rounded-2xl text-sm font-semibold transition ${
+                                    isWalkIn
+                                        ? "bg-[#4DB980] text-black"
+                                        : "bg-white/10 text-white/60 hover:bg-white/15"
+                                }`}
+                            >
+                                Посадить сейчас
+                            </button>
                         </div>
-                    </label>
+                    )}
 
-                    {/* Имя */}
-                    <label className="block text-sm font-medium text-white/60">
-                        Имя
-                        <input
-                            type="text"
-                            value={name}
-                            onChange={(e) => setName(e.target.value)}
-                            disabled={Boolean(foundGuest)}
-                            placeholder={foundGuest ? "" : "Введите имя"}
-                            className="mt-2 h-14 w-full rounded-2xl border border-white/10 bg-white/10 px-4 text-base text-white placeholder:text-white/25 disabled:opacity-60"
-                        />
-                    </label>
+                    {!isWalkIn && (
+                        <>
+                            {/* Телефон */}
+                            <label className="block text-sm font-medium text-white/60">
+                                Телефон гостя
+                                <div className="relative mt-2">
+                                    <input
+                                        type="tel"
+                                        inputMode="numeric"
+                                        value={phone}
+                                        onChange={(e) => setPhone(formatPhone(e.target.value))}
+                                        placeholder="+7 (___) ___-__-__"
+                                        className="h-14 w-full rounded-2xl border border-white/10 bg-white/10 px-4 text-base text-white placeholder:text-white/25"
+                                    />
+                                    {foundGuest && (
+                                        <span className="absolute right-4 top-1/2 -translate-y-1/2 rounded-lg bg-[#4DB980]/20 px-2 py-1 text-xs font-semibold text-[#4DB980]">
+                                            известен
+                                        </span>
+                                    )}
+                                </div>
+                            </label>
 
-                    {/* Комментарий */}
-                    <label className="block text-sm font-medium text-white/60">
-                        Комментарий
-                        <textarea
-                            value={comment}
-                            onChange={(e) => setComment(e.target.value)}
-                            rows={3}
-                            placeholder="Пожелания, особенности..."
-                            className="mt-2 w-full resize-none rounded-2xl border border-white/10 bg-white/10 px-4 py-3 text-base text-white placeholder:text-white/25"
-                        />
-                    </label>
+                            {/* Имя */}
+                            <label className="block text-sm font-medium text-white/60">
+                                Имя
+                                <input
+                                    type="text"
+                                    value={name}
+                                    onChange={(e) => setName(e.target.value)}
+                                    disabled={Boolean(foundGuest)}
+                                    placeholder={foundGuest ? "" : "Введите имя"}
+                                    className="mt-2 h-14 w-full rounded-2xl border border-white/10 bg-white/10 px-4 text-base text-white placeholder:text-white/25 disabled:opacity-60"
+                                />
+                            </label>
+
+                            {/* Комментарий */}
+                            <label className="block text-sm font-medium text-white/60">
+                                Комментарий
+                                <textarea
+                                    value={comment}
+                                    onChange={(e) => setComment(e.target.value)}
+                                    rows={2}
+                                    placeholder="Пожелания, особенности..."
+                                    className="mt-2 w-full resize-none rounded-2xl border border-white/10 bg-white/10 px-4 py-3 text-base text-white placeholder:text-white/25"
+                                />
+                            </label>
+
+                            {/* История броней гостя */}
+                            {foundGuest && guestHistory.length > 0 && (
+                                <div>
+                                    <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-white/40">
+                                        История — {foundGuest.name}
+                                    </p>
+                                    <div className="space-y-1.5">
+                                        {guestHistory.map((b) => (
+                                            <div
+                                                key={b.id}
+                                                className="flex items-center justify-between rounded-xl bg-white/5 px-3 py-2 text-xs"
+                                            >
+                                                <span className="text-white/70">
+                                                    {new Date(b.date + "T00:00:00").toLocaleDateString("ru-RU", { day: "numeric", month: "short" })}
+                                                    {" · "}Стол №{b.tableId} · {b.startTime}
+                                                </span>
+                                                <span className={`rounded-md px-2 py-0.5 font-semibold ${
+                                                    b.status === "reserved" ? "bg-[#D7A441]/20 text-[#D7A441]" :
+                                                    b.status === "seated"   ? "bg-[#4DB980]/20 text-[#4DB980]" :
+                                                    b.status === "completed"? "bg-white/10 text-white/50" :
+                                                    "bg-[#D25A5A]/20 text-[#D25A5A]"
+                                                }`}>
+                                                    {b.status === "reserved"  ? "Бронь" :
+                                                     b.status === "seated"    ? "Сидит" :
+                                                     b.status === "completed" ? "Завершена" : "Отменена"}
+                                                </span>
+                                            </div>
+                                        ))}
+                                    </div>
+                                </div>
+                            )}
+                        </>
+                    )}
+
+                    {isWalkIn && (
+                        <div className="rounded-2xl bg-[#4DB980]/10 border border-[#4DB980]/20 px-4 py-3 text-sm text-[#4DB980]">
+                            Стол будет занят сразу — без записи контактов.
+                        </div>
+                    )}
                 </div>
 
                 {/* Ошибка валидации */}
@@ -413,8 +493,22 @@ export default function BookingModal({
                     onClick={() => {
                         if (!table) return;
 
+                        if (isWalkIn) {
+                            const nextBooking = {
+                                tableId: table.id,
+                                date,
+                                startTime: time,
+                                endTime,
+                                guests: guestCount,
+                                status: "seated" as const,
+                                guest: { name: "", phone: "", tags: [], comment: "" },
+                            };
+                            onCreate(nextBooking, { id: 0, name: "", phone: "", tags: [], comment: "" });
+                            return;
+                        }
+
                         const guest: Guest = foundGuest ?? {
-                            id: Date.now(),
+                            id: 0,
                             name: name.trim(),
                             phone: phone.trim(),
                             tags: [],
@@ -442,13 +536,14 @@ export default function BookingModal({
                             onCreate(nextBooking, { ...guest, comment });
                         }
                     }}
-                    className="
-                        mt-5 w-full rounded-2xl bg-[#D7A441] px-4 py-4
+                    className={`
+                        mt-5 w-full rounded-2xl px-4 py-4
                         text-base font-bold text-black transition active:scale-[.98]
-                        hover:bg-[#e0b45d] disabled:cursor-not-allowed disabled:opacity-40
-                    "
+                        disabled:cursor-not-allowed disabled:opacity-40
+                        ${isWalkIn ? "bg-[#4DB980] hover:bg-[#5ecf8f]" : "bg-[#D7A441] hover:bg-[#e0b45d]"}
+                    `}
                 >
-                    {booking ? "Сохранить изменения" : "Создать бронирование"}
+                    {booking ? "Сохранить изменения" : isWalkIn ? "Посадить за стол" : "Создать бронирование"}
                 </button>
 
                 {/* Удаление брони */}
