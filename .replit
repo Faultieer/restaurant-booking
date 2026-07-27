@@ -38,3 +38,4 @@ externalPort = 3001
 
 [userenv.shared]
 VITE_SUPABASE_URL = "https://fndicvbvslhokydkpxiq.supabase.co"
+VITE_SUPABASE_KEY = "sb_publishable_FmHQEdWtMk7VoQMQP31kRQ_XC9hOuhD"
