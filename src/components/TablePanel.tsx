@@ -122,7 +122,6 @@ export default function TablePanel({
     }
 
     const schedule = generateSchedule(table.id, bookings, selectedDate);
-    const reason = blockReason === "другая причина" ? customReason.trim() : blockReason;
 
     return (
         <aside className="
