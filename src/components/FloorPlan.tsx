@@ -1,3 +1,5 @@
+import { useEffect, useRef, useState } from "react";
+
 import Table from "./Table";
 import type { TableVisualStatus } from "./Table";
 
@@ -74,7 +76,7 @@ function getBaseState(table: TableType, bookings: Booking[], date: string, time:
     if (table.status === "blocked") {
         return {
             status: "blocked" as TableVisualStatus,
-            label: table.blockReason ? `Недоступно: ${table.blockReason}` : "Недоступно",
+            label: "Недоступно",
         };
     }
 
@@ -116,7 +118,7 @@ function getDraftState(table: TableType, bookings: Booking[], draft: BookingDraf
     if (table.status === "blocked") {
         return {
             status: "blocked" as TableVisualStatus,
-            label: table.blockReason ? `Недоступно: ${table.blockReason}` : "Недоступно",
+            label: "Недоступно",
         };
     }
 
@@ -149,6 +151,10 @@ function getDraftState(table: TableType, bookings: Booking[], draft: BookingDraf
     };
 }
 
+// Natural canvas dimensions (must match the coordinate space of tablePositions)
+const FLOOR_W = 1300;
+const FLOOR_H = 880;
+
 export default function FloorPlan({
     tables,
     bookings,
@@ -159,50 +165,77 @@ export default function FloorPlan({
     selectedTableId,
     bookingTableId,
 }: FloorPlanProps) {
+    const containerRef = useRef<HTMLDivElement>(null);
+    const [scale, setScale] = useState(1);
+
+    useEffect(() => {
+        const el = containerRef.current;
+        if (!el) return;
+        const update = () => {
+            const s = Math.min(el.clientWidth / FLOOR_W, el.clientHeight / FLOOR_H);
+            setScale(Math.max(0.3, s)); // min 0.3× so tiny screens don't collapse
+        };
+        update();
+        const ro = new ResizeObserver(update);
+        ro.observe(el);
+        return () => ro.disconnect();
+    }, []);
+
     return (
-        <div className="relative h-full min-h-[900px] w-full overflow-hidden">
+        <div ref={containerRef} className="relative h-full w-full overflow-hidden">
+            {/* Scaled canvas — coordinates stay fixed, only the scale changes */}
             <div
-                className="absolute rounded-full bg-white/20"
-                style={{ left: 760, top: 40, width: 12, height: 820 }}
-            />
-
-            <div
-                className="
-                    absolute flex h-36 w-72 items-center justify-center
-                    rounded-3xl border border-white/10 bg-white/5 text-xl text-white/40
-                "
-                style={{ left: 850, top: 100 }}
+                style={{
+                    transform: `scale(${scale})`,
+                    transformOrigin: "top left",
+                    width: FLOOR_W,
+                    height: FLOOR_H,
+                    position: "absolute",
+                }}
             >
-                Бар
+                <div
+                    className="absolute rounded-full bg-white/20"
+                    style={{ left: 760, top: 40, width: 12, height: 820 }}
+                />
+
+                <div
+                    className="
+                        absolute flex h-36 w-72 items-center justify-center
+                        rounded-3xl border border-white/10 bg-white/5 text-xl text-white/40
+                    "
+                    style={{ left: 850, top: 100 }}
+                >
+                    Бар
+                </div>
+
+                {tables.map((table) => {
+                    const position = tablePositions.find((item) => item.id === table.id);
+                    const tableState = bookingDraft
+                        ? getDraftState(table, bookings, bookingDraft)
+                        : getBaseState(table, bookings, selectedDate, selectedTime);
+
+                    if (!position) return null;
+
+                    return (
+                        <div
+                            key={table.id}
+                            className="absolute"
+                            style={{ left: position.x, top: position.y }}
+                        >
+                            <Table
+                                number={table.id}
+                                seats={table.seats}
+                                status={tableState.status}
+                                label={tableState.label}
+                                selected={
+                                    selectedTableId === table.id || bookingTableId === table.id
+                                }
+                                onClick={() => onSelectTable(table)}
+                            />
+                        </div>
+                    );
+                })}
             </div>
-
-            {tables.map((table) => {
-                const position = tablePositions.find((item) => item.id === table.id);
-                const tableState = bookingDraft
-                    ? getDraftState(table, bookings, bookingDraft)
-                    : getBaseState(table, bookings, selectedDate, selectedTime);
-
-                if (!position) return null;
-
-                return (
-                    <div
-                        key={table.id}
-                        className="absolute"
-                        style={{ left: position.x, top: position.y }}
-                    >
-                        <Table
-                            number={table.id}
-                            seats={table.seats}
-                            status={tableState.status}
-                            label={tableState.label}
-                            selected={
-                                selectedTableId === table.id || bookingTableId === table.id
-                            }
-                            onClick={() => onSelectTable(table)}
-                        />
-                    </div>
-                );
-            })}
         </div>
     );
 }

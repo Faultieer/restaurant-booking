@@ -27,7 +27,6 @@ type ScheduleItem =
 
 const dayStart = "13:00";
 const dayEnd = "24:00";
-const blockReasons = ["уборка", "ремонт", "резерв администрации", "другая причина"];
 
 function timeToMinutes(time: string) {
     if (time === "24:00") return 1440;
@@ -106,8 +105,6 @@ export default function TablePanel({
     onBlockTable,
     onUnblockTable,
 }: TablePanelProps) {
-    const [blockReason, setBlockReason] = useState(blockReasons[0]);
-    const [customReason, setCustomReason] = useState("");
     const [isBlockOpen, setIsBlockOpen] = useState(false);
 
     if (!table) {
@@ -144,8 +141,8 @@ export default function TablePanel({
                     <h2 className="text-2xl font-bold">Стол №{table.id}</h2>
                     <p className="mt-2 text-white/50">{table.seats} мест</p>
                     {table.status === "blocked" && (
-                        <p className="mt-2 rounded-xl bg-white/10 px-3 py-2 text-sm text-white/75">
-                            Недоступно: {table.blockReason ?? "без причины"}
+                        <p className="mt-2 rounded-xl bg-[#D25A5A]/20 px-3 py-2 text-sm text-[#D25A5A]">
+                            Стол заблокирован
                         </p>
                     )}
                 </div>
@@ -189,8 +186,6 @@ export default function TablePanel({
 
             {isBlockOpen && (
                 <div className="mb-5 rounded-2xl border border-white/10 bg-white/5 p-4">
-                    <h3 className="font-semibold">Блокировка стола</h3>
-
                     {table.status === "blocked" ? (
                         <button
                             type="button"
@@ -198,50 +193,21 @@ export default function TablePanel({
                                 onUnblockTable(table.id);
                                 setIsBlockOpen(false);
                             }}
-                            className="mt-4 h-12 w-full rounded-xl bg-white/10 px-4 font-semibold transition hover:bg-white/15"
+                            className="h-12 w-full rounded-xl bg-white/10 px-4 font-semibold transition hover:bg-white/15"
                         >
                             Снять блокировку
                         </button>
                     ) : (
-                        <>
-                            <select
-                                value={blockReason}
-                                onChange={(event) => setBlockReason(event.target.value)}
-                                className="mt-4 h-12 w-full rounded-xl border border-white/10 bg-white/10 px-3 text-white"
-                            >
-                                {blockReasons.map((item) => (
-                                    <option key={item} value={item}>
-                                        {item}
-                                    </option>
-                                ))}
-                            </select>
-
-                            {blockReason === "другая причина" && (
-                                <input
-                                    type="text"
-                                    value={customReason}
-                                    onChange={(event) => setCustomReason(event.target.value)}
-                                    placeholder="Причина"
-                                    className="mt-3 h-12 w-full rounded-xl border border-white/10 bg-white/10 px-3 text-white placeholder:text-white/30"
-                                />
-                            )}
-
-                            <button
-                                type="button"
-                                disabled={!reason}
-                                onClick={() => {
-                                    onBlockTable(table.id, reason);
-                                    setIsBlockOpen(false);
-                                }}
-                                className="
-                                    mt-4 h-12 w-full rounded-xl bg-[#D25A5A] px-4
-                                    font-semibold text-white transition hover:bg-[#df6b6b]
-                                    disabled:cursor-not-allowed disabled:opacity-45
-                                "
-                            >
-                                Заблокировать
-                            </button>
-                        </>
+                        <button
+                            type="button"
+                            onClick={() => {
+                                onBlockTable(table.id, "");
+                                setIsBlockOpen(false);
+                            }}
+                            className="h-12 w-full rounded-xl bg-[#D25A5A] px-4 font-semibold text-white transition hover:bg-[#df6b6b]"
+                        >
+                            Заблокировать стол
+                        </button>
                     )}
                 </div>
             )}
