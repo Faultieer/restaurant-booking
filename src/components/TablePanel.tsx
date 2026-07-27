@@ -230,10 +230,24 @@ export default function TablePanel({
                                 p-4 text-left transition hover:bg-[#D25A5A]/30
                             "
                         >
-                            <div className="font-semibold">
-                                {item.startTime}–{item.endTime}
+                            <div className="flex items-center justify-between gap-2">
+                                <span className="font-semibold">
+                                    {item.startTime}–{item.endTime}
+                                </span>
+                                {item.booking.bookingTags?.length > 0 && (
+                                    <div className="flex flex-wrap gap-1">
+                                        {item.booking.bookingTags.map((tag) => (
+                                            <span
+                                                key={tag}
+                                                className="rounded-md bg-[#D7A441]/20 px-2 py-0.5 text-xs font-semibold text-[#D7A441]"
+                                            >
+                                                {tag}
+                                            </span>
+                                        ))}
+                                    </div>
+                                )}
                             </div>
-                            <p className="mt-2">{item.booking.guest.name}</p>
+                            <p className="mt-2">{item.booking.guest.name || <span className="text-white/40">Без контактов</span>}</p>
                             <p className="text-sm text-white/60">{item.booking.guests} гостя</p>
                             <p className="mt-2 text-xs uppercase tracking-wide text-white/50">
                                 {getStatusLabel(item.booking.status)}

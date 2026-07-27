@@ -24,6 +24,15 @@ type BookingModalProps = {
     onDelete: (bookingId: number) => void;
 };
 
+const BOOKING_TAGS = [
+    { value: "День рождения 🎂", label: "День рождения 🎂" },
+    { value: "Поминки 🕯️",      label: "Поминки 🕯️" },
+    { value: "Годовщина 💍",     label: "Годовщина 💍" },
+    { value: "Корпоратив 🥂",   label: "Корпоратив 🥂" },
+    { value: "Свидание 🌹",     label: "Свидание 🌹" },
+    { value: "VIP ⭐",           label: "VIP ⭐" },
+];
+
 const quickTimes = [
     "13:00", "14:00", "15:00", "16:00",
     "17:00", "18:00", "19:00", "19:30",
@@ -122,9 +131,11 @@ export default function BookingModal({
     const [time, setTime] = useState(selectedTime);
     const [durationMinutes, setDurationMinutes] = useState(120);
     const [guestCount, setGuestCount] = useState(2);
+    const [bookingTags, setBookingTags] = useState<string[]>([]);
     const [phone, setPhone] = useState("+7");
     const [name, setName] = useState("");
     const [comment, setComment] = useState("");
+    const [showSuggestions, setShowSuggestions] = useState(false);
     const [confirmDelete, setConfirmDelete] = useState(false);
 
     const initialDateRef = useRef(selectedDate);
@@ -166,6 +177,15 @@ export default function BookingModal({
         return "";
     }, [conflict, date, durationMinutes, foundGuest, guestCount, isWalkIn, name, phoneComplete, table, time]);
 
+    // Автокомплит — подсказки при вводе телефона (4+ цифр)
+    const phoneSuggestions = useMemo(() => {
+        const digits = phoneDigits(phone);
+        if (digits.length < 4 || digits.length >= 11) return [];
+        return guestsDirectory
+            .filter((g) => phoneDigits(g.phone).includes(digits))
+            .slice(0, 5);
+    }, [guestsDirectory, phone]);
+
     // История броней найденного гостя
     const guestHistory = useMemo(() => {
         if (!foundGuest) return [];
@@ -187,8 +207,10 @@ export default function BookingModal({
         setPhone(booking?.guest.phone ?? "+7");
         setName(booking?.guest.name ?? "");
         setComment(booking?.guest.comment ?? "");
+        setBookingTags(booking?.bookingTags ?? []);
         setConfirmDelete(false);
         setIsWalkIn(false);
+        setShowSuggestions(false);
     }, [booking, open]);
 
     // Обновляем draft для плана зала
@@ -361,7 +383,37 @@ export default function BookingModal({
                         </div>
                     </div>
 
-                        {/* Разделитель + переключатель режима */}
+                        {/* Теги брони */}
+                    <div className="text-sm font-medium text-white/60">
+                        Тег события
+                        <div className="mt-2 flex flex-wrap gap-2">
+                            {BOOKING_TAGS.map((tag) => {
+                                const active = bookingTags.includes(tag.value);
+                                return (
+                                    <button
+                                        key={tag.value}
+                                        type="button"
+                                        onClick={() =>
+                                            setBookingTags((prev) =>
+                                                active
+                                                    ? prev.filter((t) => t !== tag.value)
+                                                    : [...prev, tag.value]
+                                            )
+                                        }
+                                        className={`rounded-xl px-3 py-2 text-xs font-semibold transition active:scale-95 ${
+                                            active
+                                                ? "bg-[#D7A441] text-black"
+                                                : "bg-white/10 text-white/70 hover:bg-white/15"
+                                        }`}
+                                    >
+                                        {tag.label}
+                                    </button>
+                                );
+                            })}
+                        </div>
+                    </div>
+
+                    {/* Разделитель + переключатель режима */}
                     <div className="h-px bg-white/10" />
 
                     {!booking && (
@@ -393,15 +445,20 @@ export default function BookingModal({
 
                     {!isWalkIn && (
                         <>
-                            {/* Телефон */}
-                            <label className="block text-sm font-medium text-white/60">
+                            {/* Телефон с автокомплитом */}
+                            <div className="text-sm font-medium text-white/60">
                                 Телефон гостя
                                 <div className="relative mt-2">
                                     <input
                                         type="tel"
                                         inputMode="numeric"
                                         value={phone}
-                                        onChange={(e) => setPhone(formatPhone(e.target.value))}
+                                        onChange={(e) => {
+                                            setPhone(formatPhone(e.target.value));
+                                            setShowSuggestions(true);
+                                        }}
+                                        onFocus={() => setShowSuggestions(true)}
+                                        onBlur={() => setTimeout(() => setShowSuggestions(false), 150)}
                                         placeholder="+7 (___) ___-__-__"
                                         className="h-14 w-full rounded-2xl border border-white/10 bg-white/10 px-4 text-base text-white placeholder:text-white/25"
                                     />
@@ -410,8 +467,27 @@ export default function BookingModal({
                                             известен
                                         </span>
                                     )}
+                                    {/* Выпадающий список подсказок */}
+                                    {showSuggestions && phoneSuggestions.length > 0 && (
+                                        <div className="absolute left-0 right-0 top-full z-50 mt-1 overflow-hidden rounded-2xl border border-white/10 bg-[#18322C] shadow-2xl">
+                                            {phoneSuggestions.map((g) => (
+                                                <button
+                                                    key={g.id}
+                                                    type="button"
+                                                    onMouseDown={() => {
+                                                        setPhone(formatPhone(g.phone));
+                                                        setShowSuggestions(false);
+                                                    }}
+                                                    className="flex w-full items-center justify-between px-4 py-3 text-left transition hover:bg-white/10"
+                                                >
+                                                    <span className="font-semibold text-white">{g.name}</span>
+                                                    <span className="text-sm text-white/50">{formatPhone(g.phone)}</span>
+                                                </button>
+                                            ))}
+                                        </div>
+                                    )}
                                 </div>
-                            </label>
+                            </div>
 
                             {/* Имя */}
                             <label className="block text-sm font-medium text-white/60">
@@ -501,7 +577,8 @@ export default function BookingModal({
                                 endTime,
                                 guests: guestCount,
                                 status: "seated" as const,
-                                guest: { name: "", phone: "", tags: [], comment: "" },
+                                bookingTags,
+                                guest: { name: "", phone: "", comment: "" },
                             };
                             onCreate(nextBooking, { id: 0, name: "", phone: "", tags: [], comment: "" });
                             return;
@@ -522,10 +599,10 @@ export default function BookingModal({
                             endTime,
                             guests: guestCount,
                             status: booking?.status ?? "reserved",
+                            bookingTags,
                             guest: {
                                 name: guest.name,
                                 phone: guest.phone,
-                                tags: guest.tags,
                                 comment,
                             },
                         };
