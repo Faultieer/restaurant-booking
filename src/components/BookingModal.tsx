@@ -24,7 +24,6 @@ type BookingModalProps = {
     onDelete: (bookingId: number) => void;
 };
 
-const durationOptions = Array.from({ length: 12 }, (_, i) => (i + 1) * 30);
 const quickTimes = [
     "13:00", "14:00", "15:00", "16:00",
     "17:00", "18:00", "19:00", "19:30",
