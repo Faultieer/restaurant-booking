@@ -8,7 +8,7 @@ type TablePanelProps = {
     selectedDate: string;
     onClose: () => void;
     onEditBooking: (booking: Booking) => void;
-    onBlockTable: (tableId: number, reason: string) => void;
+    onBlockTable: (tableId: number) => void;
     onUnblockTable: (tableId: number) => void;
 };
 
@@ -200,7 +200,7 @@ export default function TablePanel({
                         <button
                             type="button"
                             onClick={() => {
-                                onBlockTable(table.id, "");
+                                onBlockTable(table.id);
                                 setIsBlockOpen(false);
                             }}
                             className="h-12 w-full rounded-xl bg-[#D25A5A] px-4 font-semibold text-white transition hover:bg-[#df6b6b]"
