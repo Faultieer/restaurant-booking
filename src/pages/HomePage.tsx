@@ -241,15 +241,17 @@ export default function HomePage() {
   // ─── Render ────────────────────────────────────────────────────────────────
 
   return (
-    <div className="h-screen overflow-hidden bg-[#10211D] text-white">
-      <header className="relative flex h-20 items-center justify-between border-b border-white/10 px-8">
-        <div className="flex items-center gap-4">
-          <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-[#D7A441] text-xl font-bold text-black">
-            G
-          </div>
+    <div className="flex h-screen flex-col overflow-hidden bg-[#10211D] text-white">
+      <header className="relative flex h-16 shrink-0 items-center justify-between border-b border-white/10 px-4 md:h-20 md:px-8">
+        <div className="flex items-center gap-3">
+          <img
+            src="/logo.jpg"
+            alt="Гусь и Огурчик"
+            className="h-10 w-10 rounded-xl object-cover md:h-12 md:w-12 md:rounded-2xl"
+          />
           <div>
-            <h1 className="text-xl font-semibold">Гусь и Огурчик</h1>
-            <p className="text-sm text-white/50">Система бронирования</p>
+            <h1 className="text-base font-semibold md:text-xl">Гусь и Огурчик</h1>
+            <p className="text-xs text-white/50 md:text-sm">Система бронирования</p>
           </div>
         </div>
 
@@ -299,8 +301,8 @@ export default function HomePage() {
         </div>
       )}
 
-      <main className="relative h-[calc(100vh-80px)] md:grid md:grid-cols-[1fr_500px] xl:grid-cols-[1fr_560px] 2xl:grid-cols-[1fr_640px]">
-        <section className="relative h-full overflow-auto md:overflow-hidden">
+      <main className="relative flex flex-1 flex-col overflow-hidden md:grid md:grid-cols-[1fr_500px] xl:grid-cols-[1fr_560px] 2xl:grid-cols-[1fr_640px]">
+        <section className="relative min-h-0 flex-1 overflow-hidden md:h-full">
           <FloorPlan
             tables={tables}
             bookings={bookings}
@@ -358,17 +360,25 @@ export default function HomePage() {
         )}
       </main>
 
+      {/* Mobile: статичная кнопка под планом зала */}
+      {!isBookingOpen && !selectedTable && (
+        <div className="shrink-0 border-t border-white/10 p-4 pb-safe-4 md:hidden">
+          <button
+            type="button"
+            onClick={openBooking}
+            className="w-full rounded-2xl bg-[#D7A441] py-4 text-base font-semibold text-black shadow-xl transition hover:bg-[#e0b45d] active:scale-[.98]"
+          >
+            Новая бронь
+          </button>
+        </div>
+      )}
+
+      {/* Desktop: fixed кнопка */}
       {!isBookingOpen && (
         <button
           type="button"
           onClick={openBooking}
-          className={[
-            "fixed z-40 rounded-2xl bg-[#D7A441] font-semibold text-black shadow-xl",
-            "transition hover:bg-[#e0b45d] active:scale-[.98]",
-            "bottom-safe-4 left-4 right-4 py-4 text-base",
-            "md:bottom-8 md:left-auto md:right-8 md:min-w-80 md:px-12 md:py-4 md:text-lg",
-            selectedTable ? "hidden md:block" : "",
-          ].join(" ")}
+          className="hidden md:block fixed z-40 rounded-2xl bg-[#D7A441] font-semibold text-black shadow-xl transition hover:bg-[#e0b45d] active:scale-[.98] bottom-8 right-8 min-w-80 px-12 py-4 text-lg"
         >
           Новая бронь
         </button>
