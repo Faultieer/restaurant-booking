@@ -125,16 +125,24 @@ export default function TablePanel({
 
     return (
         <aside className="
-            fixed inset-x-0 bottom-0 z-50 max-h-[85vh] overflow-y-auto
-            rounded-t-3xl border-t border-white/10 bg-[#10211D] text-white
+            fixed inset-0 z-50 overflow-y-auto bg-[#10211D] text-white
             md:static md:inset-auto md:z-auto md:h-full md:max-h-none
-            md:rounded-none md:border-t-0 md:border-l
+            md:rounded-none md:border-t-0 md:border-l md:border-white/10
         ">
-            {/* Drag handle (mobile only) */}
-            <div className="flex justify-center pt-3 pb-1 md:hidden">
-                <div className="h-1 w-10 rounded-full bg-white/20" />
-            </div>
             <div className="p-6 pb-safe-4 md:p-6 md:pb-6">
+            {/* Кнопка «Назад» — только на мобиле */}
+            <button
+                type="button"
+                onClick={onClose}
+                className="mb-4 flex items-center gap-2 text-sm text-white/60 transition hover:text-white md:hidden"
+                aria-label="Назад"
+            >
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                    <path d="M15 18l-6-6 6-6" />
+                </svg>
+                Назад
+            </button>
+
             <div className="flex justify-between gap-4">
                 <div>
                     <h2 className="text-2xl font-bold">Стол №{table.id}</h2>
@@ -162,10 +170,11 @@ export default function TablePanel({
                         🔒
                     </button>
 
+                    {/* Кнопка закрытия — только на desktop */}
                     <button
                         type="button"
                         onClick={onClose}
-                        className="flex h-12 w-12 items-center justify-center rounded-xl bg-white/10 text-xl transition hover:bg-white/15"
+                        className="hidden md:flex h-12 w-12 items-center justify-center rounded-xl bg-white/10 text-xl transition hover:bg-white/15"
                         aria-label="Закрыть карточку стола"
                     >
                         ×

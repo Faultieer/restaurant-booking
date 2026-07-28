@@ -241,35 +241,51 @@ export default function HomePage() {
 
   return (
     <div className="flex h-screen flex-col overflow-hidden bg-[#10211D] text-white">
-      <header className="relative flex h-16 shrink-0 items-center justify-between border-b border-white/10 px-4 md:h-20 md:px-8">
-        <div className="flex items-center gap-3">
-          <img
-            src="/logo.jpg"
-            alt="Гусь и Огурчик"
-            className="h-10 w-10 rounded-xl object-cover md:h-12 md:w-12 md:rounded-2xl"
-          />
-          <div>
-            <h1 className="text-base font-semibold md:text-xl">Гусь и Огурчик</h1>
-            <p className="text-xs text-white/50 md:text-sm">Система бронирования</p>
+      <header className="shrink-0 border-b border-white/10">
+        {/* Основная строка */}
+        <div className="relative flex h-16 items-center justify-between px-4 md:h-20 md:px-8">
+          <div className="flex items-center gap-3">
+            <img
+              src="/logo.jpg"
+              alt="Гусь и Огурчик"
+              className="h-10 w-10 rounded-xl object-cover md:h-12 md:w-12 md:rounded-2xl"
+            />
+            <div>
+              <h1 className="text-base font-semibold md:text-xl">Гусь и Огурчик</h1>
+              <p className="text-xs text-white/50 md:text-sm">Система бронирования</p>
+            </div>
           </div>
+
+          {/* Кнопка выбора даты — только на desktop в центре */}
+          <div className="absolute left-1/2 -translate-x-1/2 hidden md:block">
+            <button
+              type="button"
+              onClick={() => setIsDatePickerOpen(true)}
+              className="rounded-xl bg-white/10 px-6 py-3 transition hover:bg-white/15"
+            >
+              <span className="capitalize">{headerDate}</span>
+              <span className="ml-3 text-white/50">{selectedTime}</span>
+            </button>
+          </div>
+
+          {/* DB status indicator */}
+          {!loading && (
+            <div className={`h-2 w-2 rounded-full ${dbError ? "bg-[#D25A5A]" : "bg-[#4DB980]"}`}
+              title={dbError ?? "Supabase подключён"} />
+          )}
         </div>
 
-        <div className="absolute left-1/2 -translate-x-1/2">
+        {/* Кнопка выбора даты — только на mobile, отдельная строка */}
+        <div className="flex justify-center pb-3 md:hidden">
           <button
             type="button"
             onClick={() => setIsDatePickerOpen(true)}
-            className="rounded-xl bg-white/10 px-6 py-3 transition hover:bg-white/15"
+            className="rounded-xl bg-white/10 px-6 py-2.5 text-sm transition hover:bg-white/15"
           >
             <span className="capitalize">{headerDate}</span>
             <span className="ml-3 text-white/50">{selectedTime}</span>
           </button>
         </div>
-
-        {/* DB status indicator */}
-        {!loading && (
-          <div className={`h-2 w-2 rounded-full ${dbError ? "bg-[#D25A5A]" : "bg-[#4DB980]"}`}
-            title={dbError ?? "Supabase подключён"} />
-        )}
       </header>
 
       <DateTimePopover
