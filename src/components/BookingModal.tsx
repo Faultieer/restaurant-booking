@@ -1,7 +1,16 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 
+import DateTimePopover from "./DateTimePopover";
 import TimeWheel from "./TimeWheel";
 import type { Booking, Guest, Table } from "../pages/HomePage";
+
+function formatDateDisplay(value: string) {
+    return new Intl.DateTimeFormat("ru-RU", {
+        day: "numeric",
+        month: "long",
+        weekday: "short",
+    }).format(new Date(`${value}T00:00:00`));
+}
 
 type BookingDraft = {
     date: string;
@@ -130,6 +139,7 @@ export default function BookingModal({
     const [comment, setComment] = useState("");
     const [showSuggestions, setShowSuggestions] = useState(false);
     const [confirmDelete, setConfirmDelete] = useState(false);
+    const [showDatePicker, setShowDatePicker] = useState(false);
 
     const initialDateRef = useRef(selectedDate);
     const initialTimeRef = useRef(selectedTime);
@@ -163,20 +173,48 @@ export default function BookingModal({
 
     const phoneComplete = phoneDigits(phone).length === 11;
 
+    // Затемнённые часы/минуты — те, что конфликтуют при текущей длительности
+    const conflictHours = useMemo(() => {
+        if (!table) return new Set<string>();
+        const currentMinute = snapMinute(time.split(":")[1] ?? "30");
+        return new Set(
+            wheelHours.filter(h => {
+                const startT = `${h}:${currentMinute}`;
+                const endT = minutesToTime(timeToMinutes(startT) + durationMinutes);
+                return !!hasConflict(bookings, table.id, date, startT, endT, booking?.id);
+            })
+        );
+    }, [table, bookings, date, durationMinutes, booking?.id, time]);
+
+    const conflictMinutes = useMemo(() => {
+        if (!table) return new Set<string>();
+        const currentHour = time.split(":")[0] ?? "19";
+        return new Set(
+            wheelMinutes.filter(m => {
+                const startT = `${currentHour}:${m}`;
+                const endT = minutesToTime(timeToMinutes(startT) + durationMinutes);
+                return !!hasConflict(bookings, table.id, date, startT, endT, booking?.id);
+            })
+        );
+    }, [table, bookings, date, durationMinutes, booking?.id, time]);
+
     const validationMessage = useMemo(() => {
         if (!date) return "Выберите дату.";
         if (!time) return "Выберите время.";
         if (!durationMinutes) return "Выберите продолжительность.";
         if (!guestCount || guestCount < 1) return "Укажите количество гостей.";
+        // Сначала проверяем конфликты по столу — до проверок контактов
+        if (table) {
+            if (table.status === "blocked")
+                return table.blockReason
+                    ? `Стол заблокирован: ${table.blockReason}.`
+                    : "Стол заблокирован.";
+            if (guestCount > table.seats) return "Количество гостей превышает вместимость стола.";
+            if (conflict) return `Стол занят с ${conflict.startTime} до ${conflict.endTime}.`;
+        }
         if (!isWalkIn && !phoneComplete) return "Введите номер телефона полностью.";
         if (!isWalkIn && !foundGuest && !name.trim()) return "Укажите имя нового гостя.";
         if (!table) return "Выберите стол на плане.";
-        if (table.status === "blocked")
-            return table.blockReason
-                ? `Стол заблокирован: ${table.blockReason}.`
-                : "Стол заблокирован.";
-        if (guestCount > table.seats) return "Количество гостей превышает вместимость стола.";
-        if (conflict) return `Стол занят с ${conflict.startTime} до ${conflict.endTime}.`;
         return "";
     }, [conflict, date, durationMinutes, foundGuest, guestCount, isWalkIn, name, phoneComplete, table, time]);
 
@@ -283,15 +321,16 @@ export default function BookingModal({
 
                     {/* Дата и окончание */}
                     <div className="grid grid-cols-[1fr_auto] gap-3">
-                        <label className="text-sm font-medium text-white/60">
+                        <div className="text-sm font-medium text-white/60">
                             Дата
-                            <input
-                                type="date"
-                                value={date}
-                                onChange={(e) => setDate(e.target.value)}
-                                className="mt-2 h-14 w-full rounded-2xl border border-white/10 bg-white/10 px-4 text-base text-white"
-                            />
-                        </label>
+                            <button
+                                type="button"
+                                onClick={() => setShowDatePicker(true)}
+                                className="mt-2 flex h-14 w-full items-center rounded-2xl border border-white/10 bg-white/10 px-4 text-base text-white capitalize transition hover:bg-white/15"
+                            >
+                                {formatDateDisplay(date)}
+                            </button>
+                        </div>
                         <div className="text-sm font-medium text-white/60">
                             Конец
                             <div className="mt-2 flex h-14 min-w-[76px] items-center justify-center rounded-2xl bg-white/5 px-3 text-lg font-bold text-white">
@@ -313,6 +352,7 @@ export default function BookingModal({
                                 onChange={(h) => setTime(`${h}:${snapMinute(time.split(":")[1] ?? "30")}`)}
                                 height={150}
                                 itemHeight={44}
+                                disabledValues={conflictHours}
                             />
                             <div className="text-4xl font-bold text-white/70">:</div>
                             <TimeWheel
@@ -321,6 +361,7 @@ export default function BookingModal({
                                 onChange={(m) => setTime(`${time.split(":")[0] ?? "19"}:${m}`)}
                                 height={150}
                                 itemHeight={44}
+                                disabledValues={conflictMinutes}
                             />
                         </div>
                     </div>
@@ -636,6 +677,18 @@ export default function BookingModal({
                 )}
             </div>
             </div>{/* /p-4 wrapper */}
+
+            {/* Выбор даты — открывается при клике на поле "Дата" */}
+            <DateTimePopover
+                open={showDatePicker}
+                selectedDate={date}
+                selectedTime={time}
+                onClose={() => setShowDatePicker(false)}
+                onApply={(newDate, newTime) => {
+                    setDate(newDate);
+                    setTime(`${newTime.split(":")[0]}:${snapMinute(newTime.split(":")[1] ?? "00")}`);
+                }}
+            />
         </aside>
     );
 }
