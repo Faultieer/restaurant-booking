@@ -43,11 +43,10 @@ export type Booking = {
   endTime: string;
   guests: number;
   status: BookingStatus;
-  bookingTags: string[];
+  comment: string;
   guest: {
     name: string;
     phone: string;
-    comment: string;
   };
 };
 

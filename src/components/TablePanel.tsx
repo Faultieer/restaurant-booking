@@ -249,6 +249,9 @@ export default function TablePanel({
                             </div>
                             <p className="mt-2">{item.booking.guest.name || <span className="text-white/40">Без контактов</span>}</p>
                             <p className="text-sm text-white/60">{item.booking.guests} гостя</p>
+                            {item.booking.comment && (
+                                <p className="mt-1 text-sm text-white/50 italic">"{item.booking.comment}"</p>
+                            )}
                             <p className="mt-2 text-xs uppercase tracking-wide text-white/50">
                                 {getStatusLabel(item.booking.status)}
                             </p>

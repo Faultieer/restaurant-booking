@@ -24,15 +24,6 @@ type BookingModalProps = {
     onDelete: (bookingId: number) => void;
 };
 
-const BOOKING_TAGS = [
-    { value: "День рождения 🎂", label: "День рождения 🎂" },
-    { value: "Поминки 🕯️",      label: "Поминки 🕯️" },
-    { value: "Годовщина 💍",     label: "Годовщина 💍" },
-    { value: "Корпоратив 🥂",   label: "Корпоратив 🥂" },
-    { value: "Свидание 🌹",     label: "Свидание 🌹" },
-    { value: "VIP ⭐",           label: "VIP ⭐" },
-];
-
 const quickTimes = [
     "13:00", "14:00", "15:00", "16:00",
     "17:00", "18:00", "19:00", "19:30",
@@ -131,7 +122,6 @@ export default function BookingModal({
     const [time, setTime] = useState(selectedTime);
     const [durationMinutes, setDurationMinutes] = useState(120);
     const [guestCount, setGuestCount] = useState(2);
-    const [bookingTags, setBookingTags] = useState<string[]>([]);
     const [phone, setPhone] = useState("+7");
     const [name, setName] = useState("");
     const [comment, setComment] = useState("");
@@ -206,8 +196,7 @@ export default function BookingModal({
         setGuestCount(booking?.guests ?? 2);
         setPhone(booking?.guest.phone ?? "+7");
         setName(booking?.guest.name ?? "");
-        setComment(booking?.guest.comment ?? "");
-        setBookingTags(booking?.bookingTags ?? []);
+        setComment(booking?.comment ?? "");
         setConfirmDelete(false);
         setIsWalkIn(false);
         setShowSuggestions(false);
@@ -383,36 +372,6 @@ export default function BookingModal({
                         </div>
                     </div>
 
-                        {/* Теги брони */}
-                    <div className="text-sm font-medium text-white/60">
-                        Тег события
-                        <div className="mt-2 flex flex-wrap gap-2">
-                            {BOOKING_TAGS.map((tag) => {
-                                const active = bookingTags.includes(tag.value);
-                                return (
-                                    <button
-                                        key={tag.value}
-                                        type="button"
-                                        onClick={() =>
-                                            setBookingTags((prev) =>
-                                                active
-                                                    ? prev.filter((t) => t !== tag.value)
-                                                    : [...prev, tag.value]
-                                            )
-                                        }
-                                        className={`rounded-xl px-3 py-2 text-xs font-semibold transition active:scale-95 ${
-                                            active
-                                                ? "bg-[#D7A441] text-black"
-                                                : "bg-white/10 text-white/70 hover:bg-white/15"
-                                        }`}
-                                    >
-                                        {tag.label}
-                                    </button>
-                                );
-                            })}
-                        </div>
-                    </div>
-
                     {/* Разделитель + переключатель режима */}
                     <div className="h-px bg-white/10" />
 
@@ -502,18 +461,6 @@ export default function BookingModal({
                                 />
                             </label>
 
-                            {/* Комментарий */}
-                            <label className="block text-sm font-medium text-white/60">
-                                Комментарий
-                                <textarea
-                                    value={comment}
-                                    onChange={(e) => setComment(e.target.value)}
-                                    rows={2}
-                                    placeholder="Пожелания, особенности..."
-                                    className="mt-2 w-full resize-none rounded-2xl border border-white/10 bg-white/10 px-4 py-3 text-base text-white placeholder:text-white/25"
-                                />
-                            </label>
-
                             {/* История броней гостя */}
                             {foundGuest && guestHistory.length > 0 && (
                                 <div>
@@ -553,6 +500,18 @@ export default function BookingModal({
                             Стол будет занят сразу — без записи контактов.
                         </div>
                     )}
+
+                    {/* Комментарий к брони — всегда виден */}
+                    <label className="block text-sm font-medium text-white/60">
+                        Комментарий к брони
+                        <textarea
+                            value={comment}
+                            onChange={(e) => setComment(e.target.value)}
+                            rows={2}
+                            placeholder="Пожелания, особенности..."
+                            className="mt-2 w-full resize-none rounded-2xl border border-white/10 bg-white/10 px-4 py-3 text-base text-white placeholder:text-white/25"
+                        />
+                    </label>
                 </div>
 
                 {/* Ошибка валидации */}
@@ -577,8 +536,8 @@ export default function BookingModal({
                                 endTime,
                                 guests: guestCount,
                                 status: "seated" as const,
-                                bookingTags,
-                                guest: { name: "", phone: "", comment: "" },
+                                comment: comment.trim(),
+                                guest: { name: "", phone: "" },
                             };
                             onCreate(nextBooking, { id: 0, name: "", phone: "", tags: [], comment: "" });
                             return;
@@ -589,7 +548,7 @@ export default function BookingModal({
                             name: name.trim(),
                             phone: phone.trim(),
                             tags: [],
-                            comment: comment.trim(),
+                            comment: "",
                         };
 
                         const nextBooking = {
@@ -599,18 +558,17 @@ export default function BookingModal({
                             endTime,
                             guests: guestCount,
                             status: booking?.status ?? "reserved",
-                            bookingTags,
+                            comment: comment.trim(),
                             guest: {
                                 name: guest.name,
                                 phone: guest.phone,
-                                comment,
                             },
                         };
 
                         if (booking) {
-                            onUpdate({ ...nextBooking, id: booking.id }, { ...guest, comment });
+                            onUpdate({ ...nextBooking, id: booking.id }, guest);
                         } else {
-                            onCreate(nextBooking, { ...guest, comment });
+                            onCreate(nextBooking, guest);
                         }
                     }}
                     className={`

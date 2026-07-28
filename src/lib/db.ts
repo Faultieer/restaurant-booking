@@ -106,11 +106,10 @@ export async function loadBookings(): Promise<Booking[]> {
     endTime: trimTime(row.end_time),
     guests: row.guests_count,
     status: row.status,
-    bookingTags: row.guest_tags ?? [],
+    comment: row.guest_comment ?? "",
     guest: {
       name: row.guest_name,
       phone: row.guest_phone,
-      comment: row.guest_comment ?? "",
     },
   }));
 }
@@ -127,8 +126,8 @@ export async function createBooking(booking: Omit<Booking, "id">): Promise<Booki
       status: booking.status,
       guest_name: booking.guest.name,
       guest_phone: booking.guest.phone,
-      guest_tags: booking.bookingTags,
-      guest_comment: booking.guest.comment,
+      guest_tags: [],
+      guest_comment: booking.comment,
     })
     .select()
     .single();
@@ -143,11 +142,10 @@ export async function createBooking(booking: Omit<Booking, "id">): Promise<Booki
     endTime: trimTime(data.end_time),
     guests: data.guests_count,
     status: data.status,
-    bookingTags: data.guest_tags ?? [],
+    comment: data.guest_comment ?? "",
     guest: {
       name: data.guest_name,
       phone: data.guest_phone,
-      comment: data.guest_comment ?? "",
     },
   };
 }
@@ -164,8 +162,8 @@ export async function updateBooking(booking: Booking): Promise<void> {
       status: booking.status,
       guest_name: booking.guest.name,
       guest_phone: booking.guest.phone,
-      guest_tags: booking.bookingTags,
-      guest_comment: booking.guest.comment,
+      guest_tags: [],
+      guest_comment: booking.comment,
     })
     .eq("id", booking.id);
 
