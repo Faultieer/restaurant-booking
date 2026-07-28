@@ -49,10 +49,6 @@ function minutesToTime(minutes: number) {
     return `${String(h).padStart(2, "0")}:${String(m).padStart(2, "0")}`;
 }
 
-function changeTime(value: string, diff: number) {
-    const next = Math.min(23 * 60 + 45, Math.max(10 * 60, timeToMinutes(value) + diff));
-    return minutesToTime(next);
-}
 
 function formatDuration(minutes: number) {
     if (minutes < 60) return `${minutes} мин`;
