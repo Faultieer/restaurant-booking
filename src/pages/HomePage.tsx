@@ -330,14 +330,12 @@ export default function HomePage() {
           />
         </section>
 
-        {/* Mobile backdrop */}
-        {(isBookingOpen || selectedTable) && (
+        {/* Mobile backdrop — только когда открыта панель стола (не бронь),
+            чтобы при открытой форме брони план зала оставался тапабельным */}
+        {selectedTable && !isBookingOpen && (
           <div
             className="fixed inset-0 z-40 bg-black/60 md:hidden"
-            onClick={() => {
-              if (isBookingOpen) closeBooking();
-              else setSelectedTable(null);
-            }}
+            onClick={() => setSelectedTable(null)}
           />
         )}
 
