@@ -7,6 +7,7 @@ type TablePanelProps = {
     bookings: Booking[];
     selectedDate: string;
     onClose: () => void;
+    onBook: () => void;
     onEditBooking: (booking: Booking) => void;
     onBlockTable: (tableId: number) => void;
     onUnblockTable: (tableId: number) => void;
@@ -101,6 +102,7 @@ export default function TablePanel({
     bookings,
     selectedDate,
     onClose,
+    onBook,
     onEditBooking,
     onBlockTable,
     onUnblockTable,
@@ -255,6 +257,19 @@ export default function TablePanel({
                 )}
             </div>
             </div>{/* /p-6 wrapper */}
+
+            {/* Кнопка «Новая бронь» — фиксированная снизу на мобиле */}
+            {table.status !== "blocked" && (
+                <div className="sticky bottom-0 px-4 pb-6 pt-3 md:hidden bg-gradient-to-t from-[#10211D] via-[#10211D]/95 to-transparent">
+                    <button
+                        type="button"
+                        onClick={onBook}
+                        className="w-full rounded-2xl bg-[#D7A441] py-4 text-base font-semibold text-black shadow-xl transition hover:bg-[#e0b45d] active:scale-[.98]"
+                    >
+                        Новая бронь
+                    </button>
+                </div>
+            )}
         </aside>
     );
 }

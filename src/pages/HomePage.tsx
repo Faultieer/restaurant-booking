@@ -362,6 +362,7 @@ export default function HomePage() {
             bookings={bookings}
             selectedDate={selectedDate}
             onClose={() => setSelectedTable(null)}
+            onBook={openBooking}
             onEditBooking={(booking) => {
               const table = tables.find((t) => t.id === booking.tableId) ?? null;
               setSelectedTable(table);
