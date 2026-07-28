@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 
+import TimeWheel from "./TimeWheel";
 import type { Booking, Guest, Table } from "../pages/HomePage";
 
 type BookingDraft = {
@@ -24,11 +25,17 @@ type BookingModalProps = {
     onDelete: (bookingId: number) => void;
 };
 
-const quickTimes = [
-    "13:00", "14:00", "15:00", "16:00",
-    "17:00", "18:00", "19:00", "19:30",
-    "20:00", "20:30", "21:00", "22:00",
-];
+const wheelHours = Array.from({ length: 14 }, (_, i) => String(i + 10).padStart(2, "0"));
+const wheelMinutes = ["00", "15", "30", "45"];
+
+function snapMinute(m: string): string {
+    const n = parseInt(m, 10);
+    if (n < 8) return "00";
+    if (n < 23) return "15";
+    if (n < 38) return "30";
+    if (n < 53) return "45";
+    return "00";
+}
 
 function timeToMinutes(time: string) {
     const [h, m] = time.split(":").map(Number);
@@ -130,6 +137,16 @@ export default function BookingModal({
 
     const initialDateRef = useRef(selectedDate);
     const initialTimeRef = useRef(selectedTime);
+    const timeWheelRef = useRef<HTMLDivElement>(null);
+
+    // Блокируем скролл страницы за колёсами выбора времени
+    useEffect(() => {
+        const el = timeWheelRef.current;
+        if (!el || !open) return;
+        const prevent = (e: TouchEvent) => e.preventDefault();
+        el.addEventListener("touchmove", prevent, { passive: false });
+        return () => el.removeEventListener("touchmove", prevent);
+    }, [open]);
 
     // Ищем гостя по цифрам номера, а не по точному совпадению строки
     const foundGuest = useMemo(() => {
@@ -290,41 +307,25 @@ export default function BookingModal({
                     {/* Время */}
                     <div className="text-sm font-medium text-white/60">
                         Время начала
-                        <div className="mt-2 grid grid-cols-[48px_1fr_48px] items-center gap-2">
-                            <button
-                                type="button"
-                                onClick={() => setTime((t) => changeTime(t, -15))}
-                                className="h-12 rounded-xl bg-white/10 text-2xl font-semibold transition active:scale-95 hover:bg-white/15"
-                                aria-label="−15 мин"
-                            >
-                                −
-                            </button>
-                            <div className="flex h-12 items-center justify-center rounded-xl bg-[#D7A441] text-2xl font-bold text-black tracking-wide">
-                                {time}
-                            </div>
-                            <button
-                                type="button"
-                                onClick={() => setTime((t) => changeTime(t, 15))}
-                                className="h-12 rounded-xl bg-white/10 text-2xl font-semibold transition active:scale-95 hover:bg-white/15"
-                                aria-label="+15 мин"
-                            >
-                                +
-                            </button>
-                        </div>
-                        <div className="mt-2 grid grid-cols-6 gap-1.5">
-                            {quickTimes.map((qt) => (
-                                <button
-                                    key={qt}
-                                    type="button"
-                                    onClick={() => setTime(qt)}
-                                    className={`h-10 rounded-xl text-xs font-semibold transition active:scale-95
-                                        ${time === qt
-                                            ? "bg-[#D7A441] text-black"
-                                            : "bg-white/10 text-white hover:bg-white/15"}`}
-                                >
-                                    {qt}
-                                </button>
-                            ))}
+                        <div
+                            ref={timeWheelRef}
+                            className="mt-2 grid grid-cols-[1fr_auto_1fr] items-center gap-3 rounded-2xl bg-white/5 px-4 py-2"
+                        >
+                            <TimeWheel
+                                values={wheelHours}
+                                value={time.split(":")[0] ?? "19"}
+                                onChange={(h) => setTime(`${h}:${snapMinute(time.split(":")[1] ?? "30")}`)}
+                                height={150}
+                                itemHeight={44}
+                            />
+                            <div className="text-4xl font-bold text-white/70">:</div>
+                            <TimeWheel
+                                values={wheelMinutes}
+                                value={snapMinute(time.split(":")[1] ?? "30")}
+                                onChange={(m) => setTime(`${time.split(":")[0] ?? "19"}:${m}`)}
+                                height={150}
+                                itemHeight={44}
+                            />
                         </div>
                     </div>
 

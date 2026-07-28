@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { DayPicker } from "react-day-picker";
 import { ru } from "react-day-picker/locale";
 
@@ -54,6 +54,16 @@ export default function DateTimePopover({
     const [date, setDate] = useState<Date>(() => toAllowedDate(selectedDate));
     const [hour, setHour] = useState(() => selectedTime.split(":")[0] ?? "19");
     const [minute, setMinute] = useState(() => selectedTime.split(":")[1] ?? "30");
+
+    // Блокируем скролл страницы за колёсами (нужен non-passive listener)
+    const wheelRef = useRef<HTMLDivElement>(null);
+    useEffect(() => {
+        const el = wheelRef.current;
+        if (!el || !open) return;
+        const prevent = (e: TouchEvent) => e.preventDefault();
+        el.addEventListener("touchmove", prevent, { passive: false });
+        return () => el.removeEventListener("touchmove", prevent);
+    }, [open]);
 
     useEffect(() => {
         if (!open) return;
@@ -146,7 +156,7 @@ export default function DateTimePopover({
                         Время
                     </h2>
 
-                    <div className="grid grid-cols-[1fr_auto_1fr] items-center gap-3 rounded-2xl bg-white/5 px-4 py-2">
+                    <div ref={wheelRef} className="grid grid-cols-[1fr_auto_1fr] items-center gap-3 rounded-2xl bg-white/5 px-4 py-2">
                         <TimeWheel
                             values={hours}
                             value={hour}
